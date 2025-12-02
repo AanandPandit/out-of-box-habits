@@ -2,6 +2,10 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit,
                              QLineEdit, QPushButton, QLabel, QFrame, QGraphicsOpacityEffect)
 from PyQt5.QtCore import Qt, QPropertyAnimation, QPoint, QSize, QThread, pyqtSignal
 from python.perplexity_chatbot import ask_perplexity
+import json
+import os
+
+CHAT_HISTORY_FILE = "data/chat_history.json"
 
 class ChatWorker(QThread):
     finished = pyqtSignal(str)
@@ -50,6 +54,8 @@ class ChatbotPanel(QWidget):
         
         self.chat_history = []
         self.worker = None
+        
+        self.load_history()
 
     def send_message(self):
         text = self.input_field.text().strip()
@@ -66,16 +72,41 @@ class ChatbotPanel(QWidget):
     def handle_response(self, response):
         self.append_message("AI", response)
         self.chat_history.append({"role": "assistant", "content": response})
+        self.save_history()
         self.input_field.setDisabled(False)
         self.input_field.setFocus()
         
     def append_message(self, sender, text):
-        # User requested Neon Blue for AI (or chatbot in general). 
-        # I'll use Neon Blue (#00FFFF) for AI and Green (#00FF00) for User to contrast, 
-        # or vice versa based on standard hacker tropes.
-        # Prompt said: "use the color neon blue... for perplexity chat bot"
         color = "#00FFFF" if sender == "AI" else "#00FF00" 
         formatted = f'<div style="margin-bottom: 10px;"><b style="color: {color};">[{sender}]:</b> <span style="color: #EEEEEE;">{text}</span></div>'
         self.history_display.append(formatted)
         if sender == "USER":
              self.chat_history.append({"role": "user", "content": text})
+        self.save_history()
+
+    def save_history(self):
+        try:
+            if not os.path.exists("data"):
+                os.makedirs("data")
+            # Save both the raw messages and the display html if needed, but here we just save the message objects
+            # To restore the UI, we'll need to re-render them.
+            with open(CHAT_HISTORY_FILE, 'w') as f:
+                json.dump(self.chat_history, f)
+        except Exception as e:
+            print(f"Error saving chat history: {e}")
+
+    def load_history(self):
+        if os.path.exists(CHAT_HISTORY_FILE):
+            try:
+                with open(CHAT_HISTORY_FILE, 'r') as f:
+                    self.chat_history = json.load(f)
+                    for msg in self.chat_history:
+                        role = msg['role']
+                        content = msg['content']
+                        sender = "AI" if role == "assistant" else "USER"
+                        # Don't append to self.chat_history again inside append_message
+                        color = "#00FFFF" if sender == "AI" else "#00FF00" 
+                        formatted = f'<div style="margin-bottom: 10px;"><b style="color: {color};">[{sender}]:</b> <span style="color: #EEEEEE;">{content}</span></div>'
+                        self.history_display.append(formatted)
+            except Exception as e:
+                print(f"Error loading chat history: {e}")

@@ -1,11 +1,43 @@
 {
     "2025-12-02": {
-        "protocols": [],
-        "main": [],
-        "outreach": [],
-        "gratitude": [],
+        "protocols": [
+            {
+                "text": "Drhello world ink Water",
+                "done": false
+            },
+            {
+                "text": "Read Books",
+                "done": true
+            }
+        ],
+        "main": [
+            {
+                "text": "contact linkedin",
+                "done": false
+            },
+            {
+                "text": "sdf",
+                "done": true
+            }
+        ],
+        "outreach": [
+            {
+                "text": "dont use instagram",
+                "done": false
+            }
+        ],
+        "gratitude": [
+            {
+                "text": "i learned to build the app",
+                "done": true
+            },
+            {
+                "text": "doing good",
+                "done": true
+            }
+        ],
         "lesson": "learning",
-        "mood": 5,
+        "mood": 8,
         "productivity": 10
     }
 }

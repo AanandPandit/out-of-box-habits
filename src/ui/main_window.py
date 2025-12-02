@@ -63,7 +63,6 @@ class MainWindow(QMainWindow):
         actions = [
             ("DASHBOARD", "DASHBOARD"),
             ("HABIT TRACKER", "HABITS"),
-            # ("TASKS", "TODO"), # Removed as requested
             ("PROJECTS", "PROJECTS"),
             ("STRATEGY", "PLANS")
         ]
@@ -73,20 +72,16 @@ class MainWindow(QMainWindow):
             action.triggered.connect(lambda checked, k=page_key: self.switch_page(k))
             nav_menu.addAction(action)
             
-        # Tools
-        tools_menu = menubar.addMenu("TOOLS")
-        chat_action = QAction("TOGGLE_AI_UPLINK", self)
+        # Chat Toggle (Directly in menu bar)
+        chat_action = QAction("CHAT_UPLINK", self)
         chat_action.setShortcut("Ctrl+`")
         chat_action.triggered.connect(self.toggle_chatbot)
-        tools_menu.addAction(chat_action)
-        
-        exit_action = QAction("SHUTDOWN", self)
-        exit_action.triggered.connect(self.close)
-        menubar.addAction(exit_action)
+        menubar.addAction(chat_action)
         
         # Top Right Clock (Using a corner widget in menu bar)
         self.clock_lbl = QLabel()
-        self.clock_lbl.setStyleSheet("font-family: 'Frozen Crystal Condensed', 'Consolas'; color: #00FF00; font-weight: bold; padding-right: 20px; font-size: 18px;")
+        self.clock_lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.clock_lbl.setStyleSheet("font-family: 'Frozen Crystal Condensed', 'Consolas'; color: #00FF00; font-weight: bold; padding-right: 20px; font-size: 16px;")
         
         # Create a container for the clock to add to the menu bar
         corner_widget = QWidget()
@@ -104,7 +99,11 @@ class MainWindow(QMainWindow):
         self.update_clock()
 
     def update_clock(self):
-        self.clock_lbl.setText(datetime.now().strftime("%A %Y-%m-%d %H:%M:%S"))
+        # Time on line 1, Date + 3-char Day on line 2
+        now = datetime.now()
+        time_str = now.strftime("%H:%M:%S")
+        date_str = now.strftime("%Y-%m-%d %a")
+        self.clock_lbl.setText(f"{time_str}\n{date_str}")
 
     def switch_page(self, page_name):
         if page_name in self.pages:

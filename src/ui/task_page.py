@@ -80,6 +80,18 @@ class TaskItem(QWidget):
             self.status_lbl.setStyleSheet("font-family: 'Consolas'; font-weight: bold; color: #00FF00;") # Green for open
             self.input.setStyleSheet("background: transparent; border: none; border-bottom: 1px solid #333; color: #00FF00;")
 
+    def set_read_only(self, readonly):
+        self.input.setReadOnly(readonly)
+        self.del_btn.setVisible(not readonly)
+        # Disable interaction with status label
+        self.status_lbl.setEnabled(not readonly)
+        
+        if readonly:
+            self.input.setStyleSheet("background: transparent; border: none; color: #666;")
+            self.status_lbl.setStyleSheet("font-family: 'Consolas'; font-weight: bold; color: #666; margin-right: 5px;")
+        else:
+            self.update_style()
+
     def get_data(self):
         return {"text": self.input.text(), "done": self.done}
 
@@ -113,6 +125,13 @@ class CollapsibleSection(QFrame):
         
         self.items_layout = QVBoxLayout()
         self.content_layout.addLayout(self.items_layout)
+
+    def set_read_only(self, readonly):
+        self.add_btn.setVisible(not readonly)
+        for i in range(self.items_layout.count()):
+            widget = self.items_layout.itemAt(i).widget()
+            if widget:
+                widget.set_read_only(readonly)
 
     def toggle_content(self):
         if self.toggle_btn.isChecked():
@@ -151,6 +170,11 @@ class CollapsibleSection(QFrame):
                 item.widget().deleteLater()
 
 class TaskPage(QWidget):
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollArea, 
+                             QPushButton, QLineEdit, QCheckBox, QFrame, QSplitter, QListWidget, QMenu, QAction, QDialog, QCalendarWidget, QDialogButtonBox)
+
+# ... (Previous imports remain, but adding QDialog etc above)
+
     def __init__(self):
         super().__init__()
         self.manager = HabitsManager()
@@ -185,6 +209,12 @@ class TaskPage(QWidget):
         self.date_header.setObjectName("Header")
         header_layout.addWidget(self.date_header)
         
+        # Plan Future Button
+        self.plan_btn = QPushButton("PLAN FUTURE")
+        self.plan_btn.clicked.connect(self.open_calendar)
+        self.plan_btn.setFixedWidth(120)
+        header_layout.addWidget(self.plan_btn)
+
         self.save_btn = QPushButton("SAVE (Ctrl+S)")
         self.save_btn.setShortcut("Ctrl+S")
         self.save_btn.clicked.connect(self.save_current_day)
@@ -251,12 +281,48 @@ class TaskPage(QWidget):
         layout.addWidget(inp)
         return {"widget": widget, "input": inp}
 
+    def open_calendar(self):
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Select Date to Plan")
+        dlg.setStyleSheet("background-color: #111; color: #00FF00;")
+        layout = QVBoxLayout(dlg)
+        
+        cal = QCalendarWidget()
+        cal.setStyleSheet("background-color: #222; color: #000;")
+        cal.setGridVisible(True)
+        layout.addWidget(cal)
+        
+        btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btns.accepted.connect(dlg.accept)
+        btns.rejected.connect(dlg.reject)
+        layout.addWidget(btns)
+        
+        if dlg.exec_():
+            date = cal.selectedDate().toString("yyyy-MM-dd")
+            self.load_day(date)
+
     def load_day(self, date_str):
         self.current_date = date_str
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        
+        # Determine if read-only (Past dates are read-only)
+        is_past = date_str < today_str
+        
         # Format header with day name
         dt = datetime.strptime(date_str, "%Y-%m-%d")
-        self.date_header.setText(f"LOG: {date_str} ({dt.strftime('%A')})")
+        day_name = dt.strftime('%A')
         
+        header_text = f"LOG: {date_str} ({day_name})"
+        if date_str == today_str:
+            header_text += " [TODAY]"
+        elif is_past:
+            header_text += " [READ-ONLY]"
+        else:
+            header_text += " [FUTURE PLAN]"
+            
+        self.date_header.setText(header_text)
+        
+        # Load data
         data = self.manager.get_day(date_str)
         
         self.protocols.clear_items()
@@ -282,8 +348,25 @@ class TaskPage(QWidget):
         self.prod_input['input'].setText(str(data.get('productivity', 5)))
         
         self.update_stats_display()
+        self.set_read_only(is_past)
+
+    def set_read_only(self, readonly):
+        self.protocols.set_read_only(readonly)
+        self.main_tasks.set_read_only(readonly)
+        self.outreach.set_read_only(readonly)
+        self.gratitude.set_read_only(readonly)
+        
+        self.lesson_input.setReadOnly(readonly)
+        self.mood_input['input'].setReadOnly(readonly)
+        self.prod_input['input'].setReadOnly(readonly)
+        self.save_btn.setVisible(not readonly)
 
     def save_current_day(self):
+        # Don't save if read-only (double check, though UI should prevent it)
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        if self.current_date < today_str:
+            return
+
         try:
             mood_val = int(self.mood_input['input'].text() or 0)
             prod_val = int(self.prod_input['input'].text() or 0)
@@ -311,16 +394,20 @@ class TaskPage(QWidget):
             self.manager.load_data()
             
         dates = sorted(self.manager.data.keys(), reverse=True)
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        
         for d in dates:
             try:
                 dt = datetime.strptime(d, "%Y-%m-%d")
                 display = f"{d} ({dt.strftime('%A')})"
+                if d == today_str:
+                    display += " [Today]"
             except:
                 display = d
             self.history_list.addItem(display)
             
     def load_history_date(self, item):
-        # Extract date string "YYYY-MM-DD" from "YYYY-MM-DD (Day)"
+        # Extract date string "YYYY-MM-DD" from "YYYY-MM-DD (Day)..."
         date_str = item.text().split(' ')[0]
         self.load_day(date_str)
 
@@ -330,6 +417,6 @@ class TaskPage(QWidget):
         
         text = f"""
         STREAK: {streak} DAYS
-        TODAY: {completion:.1f}%
+        COMPLETION: {completion:.1f}%
         """
         self.stats_lbl.setText(text)

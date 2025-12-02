@@ -1,0 +1,102 @@
+/* Global Reset */
+QWidget {
+    background-color: #000000;
+    color: #00FF00;
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+    font-size: 14px;
+    selection-background-color: #00FF00;
+    selection-color: #000000;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    border: 1px solid #003300;
+    background: #000000;
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical {
+    background: #00FF00;
+    min-height: 20px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* Buttons */
+QPushButton {
+    border: 1px solid #00FF00;
+    background-color: #000000;
+    color: #00FF00;
+    padding: 5px 10px;
+    text-transform: uppercase;
+}
+QPushButton:hover {
+    background-color: #003300;
+    border: 1px solid #00FFFF;
+    color: #00FFFF;
+}
+QPushButton:pressed {
+    background-color: #00FF00;
+    color: #000000;
+}
+
+/* Line Edits & Text Areas */
+QLineEdit, QTextEdit, QPlainTextEdit {
+    background-color: #050505;
+    border: 1px solid #003300;
+    color: #00FF00;
+    padding: 5px;
+}
+QLineEdit:focus, QTextEdit:focus {
+    border: 1px solid #00FF00;
+}
+
+/* Lists & Trees */
+QListWidget, QTreeWidget {
+    border: 1px solid #003300;
+    background-color: #000000;
+}
+QListWidget::item:selected, QTreeWidget::item:selected {
+    background-color: #003300;
+    color: #00FFFF;
+    border: 1px solid #00FF00;
+}
+
+/* Labels */
+QLabel {
+    color: #00FF00;
+}
+QLabel#Header {
+    font-size: 24px;
+    font-weight: bold;
+    color: #00FFFF;
+    border-bottom: 2px solid #00FF00;
+    padding-bottom: 5px;
+}
+
+/* Custom Classes */
+.Card {
+    border: 1px solid #003300;
+    background-color: #020202;
+    padding: 10px;
+}
+.Card:hover {
+    border: 1px solid #00FF00;
+}
+
+/* Menu Bar */
+QMenuBar {
+    background-color: #000000;
+    border-bottom: 1px solid #00FF00;
+}
+QMenuBar::item {
+    spacing: 3px;
+    padding: 5px 10px;
+    background: transparent;
+    color: #00FF00;
+}
+QMenuBar::item:selected {
+    background: #00FF00;
+    color: #000000;
+}

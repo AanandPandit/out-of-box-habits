@@ -2,8 +2,11 @@ import requests
 import json
 import os
 
+# Updated API Key and Model
 API_KEY = os.environ.get("PERPLEXITY_API_KEY", "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")
 API_URL = "https://api.perplexity.ai/chat/completions"
+# Using 'sonar-pro' as 'llama-3.1-sonar-small-128k-online' is deprecated by Dec 2025
+MODEL_NAME = "sonar-pro" 
 
 def ask_perplexity(prompt: str, history: list = None) -> str:
     """
@@ -23,7 +26,7 @@ def ask_perplexity(prompt: str, history: list = None) -> str:
     messages.append({"role": "user", "content": prompt})
 
     payload = {
-        "model": "llama-3.1-sonar-small-128k-online",
+        "model": MODEL_NAME,
         "messages": messages,
         "temperature": 0.2,
         "top_p": 0.9,

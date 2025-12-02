@@ -2,18 +2,34 @@
 QWidget {
     background-color: #000000;
     color: #00FF00;
-    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
-    font-size: 14px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 16px; /* Increased font size */
     selection-background-color: #00FF00;
     selection-color: #000000;
+}
+
+/* Menu Bar */
+QMenuBar {
+    background-color: #000000;
+    border-bottom: 1px solid #00FF00;
+    font-family: "h Hackout", "Consolas", monospace; /* Menu font */
+}
+QMenuBar::item {
+    spacing: 10px;
+    padding: 8px 15px;
+    background: transparent;
+    color: #00FF00;
+}
+QMenuBar::item:selected {
+    background: #00FF00;
+    color: #000000;
 }
 
 /* Scrollbars */
 QScrollBar:vertical {
     border: 1px solid #003300;
     background: #000000;
-    width: 10px;
-    margin: 0px 0px 0px 0px;
+    width: 12px;
 }
 QScrollBar::handle:vertical {
     background: #00FF00;
@@ -28,13 +44,15 @@ QPushButton {
     border: 1px solid #00FF00;
     background-color: #000000;
     color: #00FF00;
-    padding: 5px 10px;
+    padding: 8px 15px;
     text-transform: uppercase;
+    font-weight: bold;
 }
 QPushButton:hover {
     background-color: #003300;
     border: 1px solid #00FFFF;
     color: #00FFFF;
+    box-shadow: 0 0 10px #00FFFF; /* Glow attempt (Qt supports some CSS3) */
 }
 QPushButton:pressed {
     background-color: #00FF00;
@@ -46,7 +64,7 @@ QLineEdit, QTextEdit, QPlainTextEdit {
     background-color: #050505;
     border: 1px solid #003300;
     color: #00FF00;
-    padding: 5px;
+    padding: 8px;
 }
 QLineEdit:focus, QTextEdit:focus {
     border: 1px solid #00FF00;
@@ -68,35 +86,35 @@ QLabel {
     color: #00FF00;
 }
 QLabel#Header {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
     color: #00FFFF;
     border-bottom: 2px solid #00FF00;
-    padding-bottom: 5px;
+    padding-bottom: 10px;
 }
 
 /* Custom Classes */
 .Card {
     border: 1px solid #003300;
     background-color: #020202;
-    padding: 10px;
+    padding: 15px;
 }
 .Card:hover {
     border: 1px solid #00FF00;
 }
 
-/* Menu Bar */
-QMenuBar {
-    background-color: #000000;
-    border-bottom: 1px solid #00FF00;
+/* Chatbot Specific */
+.ChatBubbleUser {
+    color: #00FFFF;
 }
-QMenuBar::item {
-    spacing: 3px;
-    padding: 5px 10px;
-    background: transparent;
-    color: #00FF00;
+.ChatBubbleAI {
+    color: #00FF00; /* Neon Green for AI usually, user asked for Neon Blue for Chatbot? 
+                       Wait, prompt said: "use the color neon blue, and other hacker color for different sections"
+                       I will make the AI text Neon Blue then. */
+    color: #00FFFF; /* Neon Blue */
 }
-QMenuBar::item:selected {
-    background: #00FF00;
-    color: #000000;
-}
+
+/* Section Colors */
+.SectionProtocols { border-left: 3px solid #00FF00; }
+.SectionMain { border-left: 3px solid #00FFFF; }
+.SectionOutreach { border-left: 3px solid #FF0033; }

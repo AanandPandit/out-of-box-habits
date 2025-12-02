@@ -1,18 +1,20 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, 
-                             QStackedWidget, QMenuBar, QAction, QSplitter)
-from PyQt5.QtCore import Qt, QPropertyAnimation, QRect
+                             QStackedWidget, QMenuBar, QAction, QLabel, QSpacerItem, QSizePolicy)
+from PyQt5.QtCore import Qt, QTimer
+from datetime import datetime
 from src.ui.dashboard_page import DashboardPage
 from src.ui.todo_page import TodoPage
 from src.ui.projects_page import ProjectsPage
 from src.ui.future_plans_page import FuturePlansPage
+from src.ui.task_page import TaskPage
 from src.ui.chatbot_panel import ChatbotPanel
 from src.core.router import Router
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("HACKER_OS_V1.0")
-        self.resize(1200, 800)
+        self.setWindowTitle("HACKER_OS_V2.0")
+        self.resize(1400, 900)
         
         # Load Stylesheet
         with open("src/ui/styles/hacker.qss", "r") as f:
@@ -25,14 +27,15 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
-        # Chatbot Panel (Hidden by default or collapsed)
+        # Chatbot Panel
         self.chatbot = ChatbotPanel()
-        self.chatbot.hide() # Start hidden
+        self.chatbot.hide()
         
         # Main Content Stack
         self.stack = QStackedWidget()
         self.pages = {
             "DASHBOARD": DashboardPage(),
+            "HABITS": TaskPage(),
             "TODO": TodoPage(),
             "PROJECTS": ProjectsPage(),
             "PLANS": FuturePlansPage()
@@ -59,6 +62,7 @@ class MainWindow(QMainWindow):
         
         actions = [
             ("DASHBOARD", "DASHBOARD"),
+            ("HABIT TRACKER", "HABITS"),
             ("TASKS", "TODO"),
             ("PROJECTS", "PROJECTS"),
             ("STRATEGY", "PLANS")
@@ -79,6 +83,28 @@ class MainWindow(QMainWindow):
         exit_action = QAction("SHUTDOWN", self)
         exit_action.triggered.connect(self.close)
         menubar.addAction(exit_action)
+        
+        # Top Right Clock (Using a corner widget in menu bar)
+        self.clock_lbl = QLabel()
+        self.clock_lbl.setStyleSheet("color: #00FF00; font-weight: bold; padding-right: 20px;")
+        
+        # Create a container for the clock to add to the menu bar
+        corner_widget = QWidget()
+        corner_layout = QHBoxLayout(corner_widget)
+        corner_layout.setContentsMargins(0, 0, 0, 0)
+        corner_layout.addStretch()
+        corner_layout.addWidget(self.clock_lbl)
+        
+        menubar.setCornerWidget(corner_widget, Qt.TopRightCorner)
+        
+        # Timer for clock
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_clock)
+        self.timer.start(1000)
+        self.update_clock()
+
+    def update_clock(self):
+        self.clock_lbl.setText(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     def switch_page(self, page_name):
         if page_name in self.pages:

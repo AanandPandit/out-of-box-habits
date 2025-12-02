@@ -69,8 +69,12 @@ class ChatbotPanel(QWidget):
         self.input_field.setFocus()
         
     def append_message(self, sender, text):
-        color = "#00FFFF" if sender == "USER" else "#00FF00"
-        formatted = f'<div style="margin-bottom: 10px;"><b style="color: {color};">[{sender}]:</b> {text}</div>'
+        # User requested Neon Blue for AI (or chatbot in general). 
+        # I'll use Neon Blue (#00FFFF) for AI and Green (#00FF00) for User to contrast, 
+        # or vice versa based on standard hacker tropes.
+        # Prompt said: "use the color neon blue... for perplexity chat bot"
+        color = "#00FFFF" if sender == "AI" else "#00FF00" 
+        formatted = f'<div style="margin-bottom: 10px;"><b style="color: {color};">[{sender}]:</b> <span style="color: #EEEEEE;">{text}</span></div>'
         self.history_display.append(formatted)
         if sender == "USER":
              self.chat_history.append({"role": "user", "content": text})

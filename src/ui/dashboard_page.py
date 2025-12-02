@@ -25,7 +25,8 @@ class DashboardPage(QWidget):
         # Time Display
         self.time_lbl = QLabel()
         self.time_lbl.setAlignment(Qt.AlignCenter)
-        self.time_lbl.setStyleSheet("font-size: 48px; color: #00FF00; font-weight: bold;")
+        # Use Frozen Crystal Condensed if available, else fallback
+        self.time_lbl.setStyleSheet("font-family: 'Frozen Crystal Condensed', 'Consolas'; font-size: 64px; color: #00FF00; font-weight: bold;")
         layout.addWidget(self.time_lbl)
         
         # Stats Grid
@@ -60,7 +61,8 @@ class DashboardPage(QWidget):
 
     def update_time(self):
         now = datetime.now()
-        self.time_lbl.setText(now.strftime("%H:%M:%S"))
+        # Day of week, Date Time
+        self.time_lbl.setText(now.strftime("%A\n%Y-%m-%d %H:%M:%S"))
         self.refresh_stats() # Periodically refresh data
 
     def refresh_stats(self):

@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         actions = [
             ("DASHBOARD", "DASHBOARD"),
             ("HABIT TRACKER", "HABITS"),
-            ("TASKS", "TODO"),
+            # ("TASKS", "TODO"), # Removed as requested
             ("PROJECTS", "PROJECTS"),
             ("STRATEGY", "PLANS")
         ]
@@ -86,7 +86,7 @@ class MainWindow(QMainWindow):
         
         # Top Right Clock (Using a corner widget in menu bar)
         self.clock_lbl = QLabel()
-        self.clock_lbl.setStyleSheet("color: #00FF00; font-weight: bold; padding-right: 20px;")
+        self.clock_lbl.setStyleSheet("font-family: 'Frozen Crystal Condensed', 'Consolas'; color: #00FF00; font-weight: bold; padding-right: 20px; font-size: 18px;")
         
         # Create a container for the clock to add to the menu bar
         corner_widget = QWidget()
@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
         self.update_clock()
 
     def update_clock(self):
-        self.clock_lbl.setText(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        self.clock_lbl.setText(datetime.now().strftime("%A %Y-%m-%d %H:%M:%S"))
 
     def switch_page(self, page_name):
         if page_name in self.pages:

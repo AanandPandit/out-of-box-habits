@@ -15,7 +15,9 @@ class TaskItem(QWidget):
         layout.setContentsMargins(0, 2, 0, 2)
         
         self.checkbox = QCheckBox()
+        self.checkbox.blockSignals(True) # Prevent signal during init
         self.checkbox.setChecked(done)
+        self.checkbox.blockSignals(False)
         self.checkbox.stateChanged.connect(self.emit_change)
         
         self.input = QLineEdit(text)
@@ -26,8 +28,14 @@ class TaskItem(QWidget):
         layout.addWidget(self.checkbox)
         layout.addWidget(self.input)
         
+        # Set initial style without emitting signal
+        self.update_style()
+        
     def emit_change(self):
+        self.update_style()
         self.changed.emit()
+
+    def update_style(self):
         if self.checkbox.isChecked():
             self.input.setStyleSheet("background: transparent; border: none; color: #555; text-decoration: line-through;")
         else:
@@ -51,17 +59,19 @@ class SectionWidget(QFrame):
         
         self.add_btn = QPushButton("+")
         self.add_btn.setFixedSize(30, 30)
-        self.add_btn.clicked.connect(self.add_item)
+        self.add_btn.clicked.connect(lambda: self.add_item("", False, True)) # User added
         header_layout.addWidget(self.add_btn)
         
         self.layout.addLayout(header_layout)
         self.items_layout = QVBoxLayout()
         self.layout.addLayout(self.items_layout)
 
-    def add_item(self, text="", done=False):
+    def add_item(self, text="", done=False, user_action=False):
         item = TaskItem(text, done)
         item.changed.connect(self.data_changed.emit)
         self.items_layout.addWidget(item)
+        if user_action:
+            self.data_changed.emit() # Save immediately on new item
         return item
 
     def get_items(self):

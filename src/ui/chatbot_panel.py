@@ -31,13 +31,14 @@ class ChatbotPanel(QWidget):
         # Chat History
         self.history_display = QTextEdit()
         self.history_display.setReadOnly(True)
-        self.history_display.setStyleSheet("border: none; background-color: transparent;")
+        self.history_display.setStyleSheet("border: none; background-color: transparent; font-family: 'Consolas'; font-size: 14px;")
         layout.addWidget(self.history_display)
         
         # Input Area
         input_layout = QHBoxLayout()
         self.input_field = QLineEdit()
         self.input_field.setPlaceholderText("Enter command...")
+        self.input_field.setStyleSheet("font-family: 'Consolas'; font-size: 14px; background-color: #050505; border: 1px solid #003300; color: #00FF00; padding: 5px;")
         self.input_field.returnPressed.connect(self.send_message)
         
         self.send_btn = QPushButton("SEND")

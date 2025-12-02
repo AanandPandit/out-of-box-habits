@@ -59,45 +59,115 @@
     "2025-12-02": {
         "protocols": [
             {
-                "text": "Drhello world ink Water",
+                "text": "Drink 5 bottles of water",
                 "done": false
             },
             {
-                "text": "Read Books",
+                "text": "Take bath",
+                "done": false
+            },
+            {
+                "text": "Eat pg food only",
+                "done": true
+            },
+            {
+                "text": "No porns",
+                "done": false
+            },
+            {
+                "text": "PG RENT PAID 7500",
                 "done": true
             }
         ],
         "main": [
             {
-                "text": "contact linkedin",
+                "text": "Complete the daily task manager app",
+                "done": true
+            },
+            {
+                "text": "Study ROS2 for 1 hour",
                 "done": false
             },
             {
-                "text": "sdf",
-                "done": true
+                "text": "Study DS from 9.30 pm to onwards from codingninja",
+                "done": false
+            },
+            {
+                "text": "Learn ML pipelines and note down in notebook",
+                "done": false
             }
         ],
         "outreach": [
             {
-                "text": "dont use instagram",
-                "done": false
+                "text": "Apply for job - 5",
+                "done": true
             },
             {
-                "text": "contack person",
+                "text": "Use notebook while learning",
                 "done": false
             }
         ],
         "gratitude": [
             {
-                "text": "i learned to build the app",
+                "text": "For having good life",
                 "done": true
             },
             {
-                "text": "doing good",
+                "text": "For getting job",
                 "done": true
             },
             {
-                "text": "helo",
+                "text": "To learn saving ",
+                "done": true
+            }
+        ],
+        "lesson": "Fake it till you make it; ",
+        "mood": 5,
+        "productivity": 3
+    },
+    "2025-12-10": {
+        "protocols": [],
+        "main": [],
+        "outreach": [],
+        "gratitude": [],
+        "lesson": "",
+        "mood": 5,
+        "productivity": 5
+    },
+    "2025-12-03": {
+        "protocols": [
+            {
+                "text": "Wake up 5AM",
+                "done": false
+            },
+            {
+                "text": "Drink 5 bottles of water",
+                "done": false
+            },
+            {
+                "text": "Pushup and body exercise",
+                "done": false
+            },
+            {
+                "text": "No porns",
+                "done": false
+            },
+            {
+                "text": "PG food only",
+                "done": false
+            },
+            {
+                "text": "NO sleeping before 12 night and no sleeping in daytime",
+                "done": false
+            }
+        ],
+        "main": [
+            {
+                "text": "ROS2 for 1 hour",
+                "done": false
+            },
+            {
+                "text": "DS for 3 hours",
                 "done": false
             },
             {
@@ -105,8 +175,32 @@
                 "done": false
             }
         ],
-        "lesson": "learning",
-        "mood": 8,
-        "productivity": 10
+        "outreach": [
+            {
+                "text": "Apply for job - 10",
+                "done": false
+            },
+            {
+                "text": "Don't message her",
+                "done": false
+            },
+            {
+                "text": "",
+                "done": false
+            }
+        ],
+        "gratitude": [
+            {
+                "text": "For learning and upskill ",
+                "done": true
+            },
+            {
+                "text": "For plan to Germany",
+                "done": true
+            }
+        ],
+        "lesson": "",
+        "mood": 5,
+        "productivity": 5
     }
 }

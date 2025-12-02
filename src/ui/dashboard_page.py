@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QGridLayout, QFrame
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QGridLayout, QFrame, QScrollArea
 from PyQt5.QtCore import QTimer, Qt
 from datetime import datetime
 from src.core.data_manager import DataManager
+from src.core.habits_manager import HabitsManager
 from src.core.cpp_bridge import CppBridge
 
 class StatCard(QFrame):
@@ -20,7 +21,14 @@ class DashboardPage(QWidget):
     def __init__(self):
         super().__init__()
         self.data_manager = DataManager()
+        self.habits_manager = HabitsManager()
+        
         layout = QVBoxLayout(self)
+        
+        # Greeting
+        self.greeting_lbl = QLabel("WELCOME, AANAND")
+        self.greeting_lbl.setStyleSheet("font-size: 32px; font-weight: bold; color: #00FFFF; margin-bottom: 20px;")
+        layout.addWidget(self.greeting_lbl)
         
         # Stats Grid
         stats_layout = QGridLayout()
@@ -32,6 +40,17 @@ class DashboardPage(QWidget):
         stats_layout.addWidget(self.projects_card, 0, 1)
         stats_layout.addWidget(self.cpp_card, 0, 2)
         layout.addLayout(stats_layout)
+        
+        # Today's Tasks Section
+        layout.addWidget(QLabel("TODAY'S OBJECTIVES"))
+        
+        self.tasks_scroll = QScrollArea()
+        self.tasks_scroll.setWidgetResizable(True)
+        self.tasks_container = QWidget()
+        self.tasks_layout = QVBoxLayout(self.tasks_container)
+        self.tasks_scroll.setWidget(self.tasks_container)
+        self.tasks_scroll.setStyleSheet("border: 1px solid #003300;")
+        layout.addWidget(self.tasks_scroll, stretch=2)
         
         # Matrix Rain / Log Area
         self.log_area = QLabel("SYSTEM LOGS INITIALIZED...")
@@ -67,6 +86,39 @@ class DashboardPage(QWidget):
             self.cpp_card.value_lbl.setStyleSheet("color: #00FFFF;" if primes else "color: #FF0000;")
         except:
              self.cpp_card.value_lbl.setText("ERROR")
+             
+        # Refresh Today's Tasks
+        self.refresh_todays_tasks()
+
+    def refresh_todays_tasks(self):
+        # Clear current
+        while self.tasks_layout.count():
+            item = self.tasks_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+                
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        day_data = self.habits_manager.get_day(today_str)
+        
+        # Collect all incomplete tasks
+        incomplete_tasks = []
+        for section in ['protocols', 'main', 'outreach']:
+            for item in day_data.get(section, []):
+                if not item['done']:
+                    incomplete_tasks.append(f"[{section.upper()}] {item['text']}")
+                    
+        if not incomplete_tasks:
+            lbl = QLabel("ALL SYSTEMS NOMINAL. NO PENDING OBJECTIVES.")
+            lbl.setStyleSheet("color: #00FF00; font-style: italic;")
+            self.tasks_layout.addWidget(lbl)
+        else:
+            for task_text in incomplete_tasks:
+                lbl = QLabel(f"⚠ {task_text}")
+                # Highlight in Red as requested for upcoming/pending
+                lbl.setStyleSheet("color: #FF0000; font-weight: bold; font-size: 14px; padding: 5px; border-bottom: 1px dashed #330000;")
+                self.tasks_layout.addWidget(lbl)
+        
+        self.tasks_layout.addStretch()
 
     def update_matrix(self):
         # Generate a frame of matrix rain using C++ (or fallback)

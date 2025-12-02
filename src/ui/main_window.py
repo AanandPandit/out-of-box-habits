@@ -1,13 +1,12 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, 
-                             QStackedWidget, QMenuBar, QAction, QLabel, QSpacerItem, QSizePolicy)
+                             QStackedWidget, QMenuBar, QAction, QLabel, QSpacerItem, QSizePolicy, QSplitter, QLineEdit)
 from PyQt5.QtCore import Qt, QTimer
 from datetime import datetime
 from src.ui.dashboard_page import DashboardPage
-from src.ui.todo_page import TodoPage
-from src.ui.projects_page import ProjectsPage
-from src.ui.future_plans_page import FuturePlansPage
 from src.ui.task_page import TaskPage
+from src.ui.browser_page import BrowserPage
 from src.ui.chatbot_panel import ChatbotPanel
+from src.ui.transition_overlay import TransitionOverlay
 from src.core.router import Router
 
 class MainWindow(QMainWindow):
@@ -23,9 +22,18 @@ class MainWindow(QMainWindow):
         # Central Widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        main_layout = QHBoxLayout(central_widget)
+        main_layout = QVBoxLayout(central_widget) # Changed to Vertical to accommodate footer
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+        
+        # Content Area (Splitter)
+        content_area = QWidget()
+        content_layout = QHBoxLayout(content_area)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+        
+        self.splitter = QSplitter(Qt.Horizontal)
+        content_layout.addWidget(self.splitter)
         
         # Chatbot Panel
         self.chatbot = ChatbotPanel()
@@ -36,45 +44,106 @@ class MainWindow(QMainWindow):
         self.pages = {
             "DASHBOARD": DashboardPage(),
             "HABITS": TaskPage(),
-            "TODO": TodoPage(),
-            "PROJECTS": ProjectsPage(),
-            "PLANS": FuturePlansPage()
+            "BROWSER": BrowserPage()
         }
         
         for name, page in self.pages.items():
             self.stack.addWidget(page)
             
-        # Layout Assembly
-        main_layout.addWidget(self.chatbot)
-        main_layout.addWidget(self.stack)
+        # Add to Splitter
+        self.splitter.addWidget(self.chatbot)
+        self.splitter.addWidget(self.stack)
+        self.splitter.setSizes([400, 1000])
+        self.splitter.setCollapsible(0, True)
+        
+        main_layout.addWidget(content_area)
+        
+        # Footer / Command Shell
+        footer = QWidget()
+        footer.setFixedHeight(40)
+        footer.setStyleSheet("background-color: #000; border-top: 1px solid #00FF00;")
+        footer_layout = QHBoxLayout(footer)
+        footer_layout.setContentsMargins(10, 0, 10, 0)
+        
+        lbl = QLabel("root@hacker_os:~$")
+        lbl.setStyleSheet("color: #00FF00; font-weight: bold;")
+        footer_layout.addWidget(lbl)
+        
+        self.cmd_input = QLineEdit()
+        self.cmd_input.setPlaceholderText("Enter command...")
+        self.cmd_input.setStyleSheet("background: transparent; border: none; color: #00FFFF; font-family: 'Consolas'; font-size: 14px;")
+        self.cmd_input.returnPressed.connect(self.process_command)
+        footer_layout.addWidget(self.cmd_input)
+        
+        main_layout.addWidget(footer)
+        
+        # Transition Overlay (Floating on top of stack)
+        self.overlay = TransitionOverlay(self.stack)
+        self.overlay.resize(self.stack.size())
+        self.overlay.hide()
+        self.overlay.finished.connect(self.on_transition_finished)
         
         # Menu Bar
         self.create_menu()
         
         # Router
         Router.instance().navigate_signal.connect(self.switch_page)
+        
+        self.pending_page = None
+
+    def resizeEvent(self, event):
+        self.overlay.resize(self.stack.size())
+        super().resizeEvent(event)
+
+    def process_command(self):
+        cmd = self.cmd_input.text().strip().lower()
+        self.cmd_input.clear()
+        
+        if cmd in ["dash", "dashboard", "home"]:
+            self.switch_page("DASHBOARD")
+        elif cmd in ["habits", "tasks", "tracker"]:
+            self.switch_page("HABITS")
+        elif cmd in ["web", "browser", "net"]:
+            self.switch_page("BROWSER")
+        elif cmd in ["chat", "ai", "uplink"]:
+            self.toggle_chatbot()
+        elif cmd.startswith("open "):
+            # Open URL in browser
+            url = cmd.split(" ", 1)[1]
+            self.switch_page("BROWSER")
+            self.pages["BROWSER"].add_new_tab(url)
+        elif cmd == "exit":
+            self.close()
+            
+    def switch_page(self, page_name):
+        if page_name in self.pages and self.stack.currentWidget() != self.pages[page_name]:
+            self.pending_page = self.pages[page_name]
+            # Start Animation
+            self.overlay.raise_()
+            self.overlay.start_animation(f"ACCESSING {page_name}...")
+            
+    def on_transition_finished(self):
+        if self.pending_page:
+            self.stack.setCurrentWidget(self.pending_page)
+            self.pending_page = None
 
     def create_menu(self):
         menubar = self.menuBar()
         
-        # Dashboard (Separate Menu)
+        # Dashboard
         dash_action = QAction("DASHBOARD", self)
         dash_action.triggered.connect(lambda: self.switch_page("DASHBOARD"))
         menubar.addAction(dash_action)
         
-        # Navigation
-        nav_menu = menubar.addMenu("NAVIGATION")
+        # Habits Manager (Top Level)
+        habits_action = QAction("HABITS MANAGER", self)
+        habits_action.triggered.connect(lambda: self.switch_page("HABITS"))
+        menubar.addAction(habits_action)
         
-        actions = [
-            ("HABIT TRACKER", "HABITS"),
-            ("PROJECTS", "PROJECTS"),
-            ("STRATEGY", "PLANS")
-        ]
-        
-        for label, page_key in actions:
-            action = QAction(label, self)
-            action.triggered.connect(lambda checked, k=page_key: self.switch_page(k))
-            nav_menu.addAction(action)
+        # Browser (Top Level)
+        browser_action = QAction("BROWSER", self)
+        browser_action.triggered.connect(lambda: self.switch_page("BROWSER"))
+        menubar.addAction(browser_action)
             
         # Chat Toggle (Directly in menu bar)
         chat_action = QAction("CHAT_UPLINK", self)
@@ -85,8 +154,8 @@ class MainWindow(QMainWindow):
         # Top Right Clock (Using a corner widget in menu bar)
         self.clock_lbl = QLabel()
         self.clock_lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        # Time large green, Date smaller grey
-        self.clock_lbl.setStyleSheet("font-family: 'Frozen Crystal Condensed', 'Consolas'; font-weight: bold; padding-right: 20px;")
+        # Updated font to "Technology" as requested
+        self.clock_lbl.setStyleSheet("font-family: 'Technology', 'Consolas'; font-weight: bold; padding-right: 20px;")
         
         # Create a container for the clock to add to the menu bar
         corner_widget = QWidget()
@@ -107,20 +176,14 @@ class MainWindow(QMainWindow):
         # Time on line 1 (Large Green), Date + Day on line 2 (Small Grey)
         now = datetime.now()
         time_str = now.strftime("%H:%M:%S")
-        date_str = now.strftime("%Y-%m-%d %A")
         
         # Use HTML for multi-color/size
         html = f"""
         <div style='text-align: right;'>
-            <span style='font-size: 24px; color: #00FF00;'>{time_str}</span><br>
-            <span style='font-size: 14px; color: #888888;'>{date_str}</span>
+            <span style='font-size: 24px; color: #888888;'>{time_str}</span>
         </div>
         """
         self.clock_lbl.setText(html)
-
-    def switch_page(self, page_name):
-        if page_name in self.pages:
-            self.stack.setCurrentWidget(self.pages[page_name])
 
     def toggle_chatbot(self):
         if self.chatbot.isVisible():

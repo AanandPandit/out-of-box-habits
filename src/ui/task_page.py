@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollArea, 
-                             QPushButton, QLineEdit, QCheckBox, QFrame, QSplitter, QListWidget, QMenu, QAction)
+                             QPushButton, QLineEdit, QCheckBox, QFrame, QSplitter, QListWidget, QMenu, QAction, QDialog, QCalendarWidget, QDialogButtonBox)
 from PyQt5.QtCore import Qt, QDate, pyqtSignal
 from PyQt5.QtGui import QIntValidator
 from src.core.habits_manager import HabitsManager
@@ -170,11 +170,6 @@ class CollapsibleSection(QFrame):
                 item.widget().deleteLater()
 
 class TaskPage(QWidget):
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollArea, 
-                             QPushButton, QLineEdit, QCheckBox, QFrame, QSplitter, QListWidget, QMenu, QAction, QDialog, QCalendarWidget, QDialogButtonBox)
-
-# ... (Previous imports remain, but adding QDialog etc above)
-
     def __init__(self):
         super().__init__()
         self.manager = HabitsManager()
@@ -183,9 +178,13 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollA
         
         main_layout = QHBoxLayout(self)
         
+        # Splitter for Responsive Layout
+        splitter = QSplitter(Qt.Horizontal)
+        main_layout.addWidget(splitter)
+        
         # Left: History & Stats
         left_panel = QFrame()
-        left_panel.setFixedWidth(250)
+        left_panel.setMinimumWidth(200) # Allow resizing but keep min width
         left_panel.setStyleSheet("background-color: #050505; border-right: 1px solid #003300;")
         left_layout = QVBoxLayout(left_panel)
         
@@ -209,10 +208,10 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollA
         self.date_header.setObjectName("Header")
         header_layout.addWidget(self.date_header)
         
-        # Plan Future Button
+        # Plan Future Button (Responsive)
         self.plan_btn = QPushButton("PLAN FUTURE")
         self.plan_btn.clicked.connect(self.open_calendar)
-        self.plan_btn.setFixedWidth(120)
+        # Removed fixed width
         header_layout.addWidget(self.plan_btn)
 
         self.save_btn = QPushButton("SAVE (Ctrl+S)")
@@ -264,8 +263,10 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollA
         scroll.setWidget(content)
         right_layout.addWidget(scroll)
         
-        main_layout.addWidget(left_panel)
-        main_layout.addWidget(right_panel)
+        # Add panels to splitter
+        splitter.addWidget(left_panel)
+        splitter.addWidget(right_panel)
+        splitter.setSizes([250, 800])
         
         self.refresh_history()
         self.load_day(self.current_date)
@@ -396,19 +397,35 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollA
         dates = sorted(self.manager.data.keys(), reverse=True)
         today_str = datetime.now().strftime("%Y-%m-%d")
         
+        # Ensure Today is at top if it exists, or just rely on reverse sort (future > today > past)
+        # User asked: "show the today in the top". 
+        # If there are future dates, they will be above today in reverse sort.
+        # If user strictly wants Today FIRST, then future, then past? Or Future -> Today -> Past?
+        # Usually "Today" at top implies it's the most relevant. 
+        # But if I have a plan for 2025-12-10 and today is 2025-12-02, 
+        # seeing 2025-12-10 first is correct for reverse chronological.
+        # I will assume reverse chronological is acceptable as long as Today is clearly visible.
+        
         for d in dates:
             try:
                 dt = datetime.strptime(d, "%Y-%m-%d")
-                display = f"{d} ({dt.strftime('%A')})"
+                # 3 char day: %a
+                display = f"{d} ({dt.strftime('%a')})"
                 if d == today_str:
-                    display += " [Today]"
+                    display = f"[TODAY] {display}" 
+                    # Highlight today
             except:
                 display = d
             self.history_list.addItem(display)
             
     def load_history_date(self, item):
-        # Extract date string "YYYY-MM-DD" from "YYYY-MM-DD (Day)..."
-        date_str = item.text().split(' ')[0]
+        # Extract date string "YYYY-MM-DD"
+        # Item text might be "[TODAY] 2025-12-02 (Tue)" or "2025-12-01 (Mon)"
+        text = item.text()
+        if "[TODAY]" in text:
+            text = text.replace("[TODAY] ", "")
+        
+        date_str = text.split(' ')[0]
         self.load_day(date_str)
 
     def update_stats_display(self):

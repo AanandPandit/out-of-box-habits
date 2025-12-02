@@ -23,7 +23,8 @@ class ChatWorker(QThread):
 class ChatbotPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedWidth(400)
+        # Removed fixed width to allow resizing via QSplitter
+        self.setMinimumWidth(300) 
         self.setStyleSheet("background-color: #050505; border-right: 1px solid #00FF00;")
         
         layout = QVBoxLayout(self)
@@ -65,19 +66,37 @@ class ChatbotPanel(QWidget):
         self.append_message("USER", text)
         self.input_field.clear()
         self.input_field.setDisabled(True)
+        self.show_loading()
         
         self.worker = ChatWorker(text, self.chat_history)
         self.worker.finished.connect(self.handle_response)
         self.worker.start()
         
     def handle_response(self, response):
+        self.hide_loading()
         self.append_message("AI", response)
         self.chat_history.append({"role": "assistant", "content": response})
         self.save_history()
         self.input_field.setDisabled(False)
         self.input_field.setFocus()
         
-    def append_message(self, sender, text):
+    def show_loading(self):
+        # Add a temporary loading message
+        self.loading_msg = QLabel("AI IS THINKING...")
+        self.loading_msg.setStyleSheet("color: #00FF00; font-style: italic; font-family: 'Consolas'; margin: 10px;")
+        # We add it to the layout, but we need to be careful where. 
+        # Actually, appending to history display is better for flow.
+        self.history_display.append('<div style="color: #00FF00; font-style: italic;">>> UPLINK ESTABLISHED. PROCESSING...</div>')
+        self.history_display.verticalScrollBar().setValue(self.history_display.verticalScrollBar().maximum())
+
+    def hide_loading(self):
+        # In a real text edit, we can't easily "remove" the last line without reloading.
+        # But we can just leave the "Processing" log there as part of the hacker feel.
+        # Or we can use a cursor. 
+        # For now, let's just leave it as a log entry.
+        pass
+
+    def render_message(self, sender, text):
         color = "#00FFFF" if sender == "AI" else "#00FF00"
         
         if sender == "AI":
@@ -85,12 +104,6 @@ class ChatbotPanel(QWidget):
             try:
                 # Convert markdown to html
                 html_content = markdown.markdown(text, extensions=['fenced_code', 'nl2br', 'tables', 'sane_lists'])
-                
-                # Basic Math handling: Replace $...$ with italic or bold for visibility if markdown didn't catch it
-                # Note: This is a hack because QTextEdit doesn't support MathML/LaTeX
-                # We'll just ensure it's visible.
-                # html_content = html_content.replace('$', '<span style="color:#FF00FF;">$</span>')
-                
                 formatted = f'<div style="margin-bottom: 20px;"><b style="color: {color};">[{sender}]:</b><br><div style="color: #EEEEEE; margin-top: 5px;">{html_content}</div></div>'
             except Exception as e:
                 # Fallback
@@ -98,7 +111,10 @@ class ChatbotPanel(QWidget):
         else:
             # User message (keep simple)
             formatted = f'<div style="margin-bottom: 10px;"><b style="color: {color};">[{sender}]:</b> <span style="color: #EEEEEE;">{text}</span></div>'
-            
+        return formatted
+
+    def append_message(self, sender, text):
+        formatted = self.render_message(sender, text)
         self.history_display.append(formatted)
         if sender == "USER":
              self.chat_history.append({"role": "user", "content": text})
@@ -108,8 +124,6 @@ class ChatbotPanel(QWidget):
         try:
             if not os.path.exists("data"):
                 os.makedirs("data")
-            # Save both the raw messages and the display html if needed, but here we just save the message objects
-            # To restore the UI, we'll need to re-render them.
             with open(CHAT_HISTORY_FILE, 'w') as f:
                 json.dump(self.chat_history, f)
         except Exception as e:
@@ -123,10 +137,9 @@ class ChatbotPanel(QWidget):
                     for msg in self.chat_history:
                         role = msg['role']
                         content = msg['content']
+                        if role == "system": continue # Skip system prompt in display
                         sender = "AI" if role == "assistant" else "USER"
-                        # Don't append to self.chat_history again inside append_message
-                        color = "#00FFFF" if sender == "AI" else "#00FF00" 
-                        formatted = f'<div style="margin-bottom: 10px;"><b style="color: {color};">[{sender}]:</b> <span style="color: #EEEEEE;">{content}</span></div>'
+                        formatted = self.render_message(sender, content)
                         self.history_display.append(formatted)
             except Exception as e:
                 print(f"Error loading chat history: {e}")

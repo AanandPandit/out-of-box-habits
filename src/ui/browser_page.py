@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, 
-                             QPushButton, QLabel, QFrame, QTabWidget, QTabBar)
+                             QPushButton, QLabel, QFrame, QTabWidget, QTabBar, QShortcut)
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import QUrl, Qt, QSize
+from PyQt5.QtGui import QKeySequence
 
 class BrowserPage(QWidget):
     def __init__(self):
@@ -17,22 +18,22 @@ class BrowserPage(QWidget):
         
         self.back_btn = QPushButton("<")
         self.back_btn.setFixedSize(40, 40)
-        self.back_btn.setStyleSheet("font-size: 20px; font-weight: bold; border: 1px solid #00FF00; color: #00FF00; background: #000;")
+        self.back_btn.setStyleSheet("font-size: 24px; font-weight: bold; border: 1px solid #00FF00; color: #00FF00; background: #000;")
         self.back_btn.clicked.connect(self.go_back)
         
         self.fwd_btn = QPushButton(">")
         self.fwd_btn.setFixedSize(40, 40)
-        self.fwd_btn.setStyleSheet("font-size: 20px; font-weight: bold; border: 1px solid #00FF00; color: #00FF00; background: #000;")
+        self.fwd_btn.setStyleSheet("font-size: 24px; font-weight: bold; border: 1px solid #00FF00; color: #00FF00; background: #000;")
         self.fwd_btn.clicked.connect(self.go_forward)
         
         self.reload_btn = QPushButton("R")
         self.reload_btn.setFixedSize(40, 40)
-        self.reload_btn.setStyleSheet("font-size: 20px; font-weight: bold; border: 1px solid #00FF00; color: #00FF00; background: #000;")
+        self.reload_btn.setStyleSheet("font-size: 24px; font-weight: bold; border: 1px solid #00FF00; color: #00FF00; background: #000;")
         self.reload_btn.clicked.connect(self.reload_page)
         
         self.url_bar = QLineEdit()
         self.url_bar.setPlaceholderText("ENTER URL...")
-        self.url_bar.setStyleSheet("font-family: 'Consolas'; font-size: 16px; color: #00FF00; background: #000; border: 1px solid #003300; padding: 10px;")
+        self.url_bar.setStyleSheet("font-family: 'Consolas'; font-size: 18px; color: #00FF00; background: #000; border: 1px solid #003300; padding: 10px;")
         self.url_bar.returnPressed.connect(self.navigate_to_url)
         
         nav_layout.addWidget(self.back_btn)
@@ -50,19 +51,26 @@ class BrowserPage(QWidget):
         
         # New Tab Button in Corner
         self.new_tab_btn = QPushButton("+")
-        self.new_tab_btn.setFixedSize(40, 40)
-        self.new_tab_btn.setStyleSheet("font-size: 24px; font-weight: bold; border: none; color: #00FF00; background: transparent;")
+        self.new_tab_btn.setFixedSize(50, 40)
+        self.new_tab_btn.setStyleSheet("font-size: 30px; font-weight: bold; border: none; color: #00FF00; background: transparent;")
         self.new_tab_btn.clicked.connect(lambda: self.add_new_tab())
         self.tabs.setCornerWidget(self.new_tab_btn, Qt.TopRightCorner)
         
         # Style the tabs
         self.tabs.setStyleSheet("""
             QTabWidget::pane { border: 0; background: #000; }
-            QTabBar::tab { background: #111; color: #888; padding: 10px 20px; border-right: 1px solid #333; font-size: 14px; }
+            QTabBar::tab { background: #111; color: #888; padding: 10px 20px; border-right: 1px solid #333; font-size: 16px; font-weight: bold; }
             QTabBar::tab:selected { background: #222; color: #00FF00; border-bottom: 2px solid #00FF00; }
         """)
         
         layout.addWidget(self.tabs)
+        
+        # Shortcuts
+        self.new_tab_shortcut = QShortcut(QKeySequence("Ctrl+T"), self)
+        self.new_tab_shortcut.activated.connect(lambda: self.add_new_tab())
+        
+        self.close_tab_shortcut = QShortcut(QKeySequence("Ctrl+W"), self)
+        self.close_tab_shortcut.activated.connect(self.close_current_tab)
         
         # Add initial tab
         self.add_new_tab("https://www.google.com")
@@ -79,30 +87,31 @@ class BrowserPage(QWidget):
         
         # Add Custom Close Button "x"
         close_btn = QPushButton("x")
-        close_btn.setFixedSize(20, 20)
+        close_btn.setFixedSize(30, 30)
         close_btn.setStyleSheet("""
-            QPushButton { border: none; color: #888; font-weight: bold; background: transparent; }
+            QPushButton { border: none; color: #888; font-weight: bold; font-size: 16px; background: transparent; }
             QPushButton:hover { color: #FF0000; }
         """)
         close_btn.clicked.connect(lambda _, index=i: self.close_tab(index))
         self.tabs.tabBar().setTabButton(i, QTabBar.RightSide, close_btn)
         
+    def close_current_tab(self):
+        self.close_tab(self.tabs.currentIndex())
+
     def close_tab(self, index):
-        # The index might shift if tabs are closed, so we need to be careful.
-        # But since we bind the index at creation, it might be stale.
-        # Better to find the widget and remove it.
-        # However, QTabBar doesn't easily give us the widget from the button click without some work.
-        # Let's try to find the index dynamically based on the sender? 
-        # Actually, simpler: The lambda captures 'i' by value at creation. 
-        # If we close tab 0, tab 1 becomes tab 0. The button on old tab 1 still thinks it's index 1.
-        # So we need a robust way.
-        
+        # If called from shortcut, index is int. If from button, we need to find it.
+        if isinstance(index, int):
+            if self.tabs.count() > 1:
+                self.tabs.removeTab(index)
+            return
+
         # Robust way: Iterate tabs and check which one has the sender as the button.
         sender = self.sender()
         for i in range(self.tabs.count()):
             btn = self.tabs.tabBar().tabButton(i, QTabBar.RightSide)
             if btn == sender:
-                self.tabs.removeTab(i)
+                if self.tabs.count() > 1:
+                    self.tabs.removeTab(i)
                 return
 
     def update_tab_title(self, browser, url):

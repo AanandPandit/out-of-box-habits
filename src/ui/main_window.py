@@ -81,11 +81,6 @@ class MainWindow(QMainWindow):
         footer_layout = QHBoxLayout(footer)
         footer_layout.setContentsMargins(10, 0, 10, 0)
         
-        # Net Stats
-        self.net_lbl = QLabel("NET: INITIALIZING...")
-        self.net_lbl.setStyleSheet("color: #888; font-family: 'Consolas'; font-size: 12px; margin-right: 15px;")
-        footer_layout.addWidget(self.net_lbl)
-        
         lbl = QLabel("root@hacker_os:~$")
         lbl.setStyleSheet("color: #00FF00; font-weight: bold;")
         footer_layout.addWidget(lbl)
@@ -151,6 +146,10 @@ class MainWindow(QMainWindow):
             elif target == "google": url = "https://www.google.com"
             elif target == "github": url = "https://www.github.com"
             elif target == "reddit": url = "https://www.reddit.com"
+            elif target == "linkedin": url = "https://www.linkedin.com"
+            elif target == "gmail": url = "https://mail.google.com"
+            elif target == "twitter": url = "https://twitter.com"
+            elif target == "instagram": url = "https://instagram.com"
             
             self.switch_page("BROWSER")
             self.pages["BROWSER"].add_new_tab(url)
@@ -193,17 +192,20 @@ class MainWindow(QMainWindow):
         chat_action.triggered.connect(self.toggle_chatbot)
         menubar.addAction(chat_action)
         
-        # Top Right Clock (Using a corner widget in menu bar)
-        self.clock_lbl = QLabel()
-        self.clock_lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        # Updated font to "Technology" as requested
-        self.clock_lbl.setStyleSheet("font-family: 'Technology', 'Consolas'; font-weight: bold; padding-right: 20px;")
-        
-        # Create a container for the clock to add to the menu bar
+        # Corner Widget (Net Stats + Clock)
         corner_widget = QWidget()
         corner_layout = QHBoxLayout(corner_widget)
         corner_layout.setContentsMargins(0, 0, 0, 0)
-        corner_layout.addStretch()
+        
+        # Net Stats (Moved to Header)
+        self.net_lbl = QLabel("NET: INIT...")
+        self.net_lbl.setStyleSheet("color: #888; font-family: 'Consolas'; font-size: 12px; margin-right: 15px;")
+        corner_layout.addWidget(self.net_lbl)
+        
+        # Top Right Clock
+        self.clock_lbl = QLabel()
+        self.clock_lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.clock_lbl.setStyleSheet("font-family: 'Technology', 'Consolas'; font-weight: bold; padding-right: 20px;")
         corner_layout.addWidget(self.clock_lbl)
         
         menubar.setCornerWidget(corner_widget, Qt.TopRightCorner)

@@ -20,21 +20,47 @@ def ask_perplexity(prompt: str, history: list = None) -> str:
     url = "https://api.perplexity.ai/chat/completions"
     
     # Prepare messages
-    messages = []
+    raw_messages = []
+    
+    # Add system prompt first
+    raw_messages.append({"role": "system", "content": "You are a helpful, hacker-themed AI assistant. Be precise and concise."})
+    
+    # Add history
     if history:
         for msg in history:
             if isinstance(msg, dict) and 'role' in msg and 'content' in msg:
-                messages.append({"role": msg['role'], "content": msg['content']})
+                raw_messages.append({"role": msg['role'], "content": msg['content']})
     
-    # If no history or just starting, add system prompt if not present
-    if not messages or messages[0]['role'] != 'system':
-        messages.insert(0, {"role": "system", "content": "You are a helpful, hacker-themed AI assistant. Be precise and concise."})
+    # Add current prompt if not already the last message
+    if not raw_messages or raw_messages[-1]['role'] != 'user' or raw_messages[-1]['content'] != prompt:
+        raw_messages.append({"role": "user", "content": prompt})
         
-    messages.append({"role": "user", "content": prompt})
+    # Sanitize messages to enforce alternation (System -> User -> Assistant -> User ...)
+    sanitized_messages = []
+    if raw_messages and raw_messages[0]['role'] == 'system':
+        sanitized_messages.append(raw_messages.pop(0))
+        
+    for msg in raw_messages:
+        if not sanitized_messages:
+            if msg['role'] == 'user':
+                sanitized_messages.append(msg)
+            continue
+            
+        last_role = sanitized_messages[-1]['role']
+        if msg['role'] == last_role:
+            # Merge content if same role (to avoid 400 error)
+            sanitized_messages[-1]['content'] += f"\n\n{msg['content']}"
+        else:
+            sanitized_messages.append(msg)
+            
+    # Ensure the last message is from user (to trigger a response)
+    if sanitized_messages and sanitized_messages[-1]['role'] == 'assistant':
+        # This shouldn't happen if we added prompt, but just in case history was weird
+        sanitized_messages.append({"role": "user", "content": "Continue."})
 
     payload = {
         "model": "sonar",
-        "messages": messages
+        "messages": sanitized_messages
     }
     
     headers = {

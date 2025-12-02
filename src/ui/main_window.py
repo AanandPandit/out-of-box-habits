@@ -1,13 +1,29 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, 
                              QStackedWidget, QMenuBar, QAction, QLabel, QSpacerItem, QSizePolicy, QSplitter, QLineEdit)
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
 from datetime import datetime
+import requests
+import time
 from src.ui.dashboard_page import DashboardPage
 from src.ui.task_page import TaskPage
 from src.ui.browser_page import BrowserPage
 from src.ui.chatbot_panel import ChatbotPanel
 from src.ui.transition_overlay import TransitionOverlay
 from src.core.router import Router
+
+class NetWorker(QThread):
+    stats_signal = pyqtSignal(bool, float)
+    
+    def run(self):
+        while True:
+            try:
+                start = time.time()
+                requests.get("https://www.google.com", timeout=2)
+                ping = (time.time() - start) * 1000
+                self.stats_signal.emit(True, ping)
+            except:
+                self.stats_signal.emit(False, 0)
+            time.sleep(5)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -65,6 +81,11 @@ class MainWindow(QMainWindow):
         footer_layout = QHBoxLayout(footer)
         footer_layout.setContentsMargins(10, 0, 10, 0)
         
+        # Net Stats
+        self.net_lbl = QLabel("NET: INITIALIZING...")
+        self.net_lbl.setStyleSheet("color: #888; font-family: 'Consolas'; font-size: 12px; margin-right: 15px;")
+        footer_layout.addWidget(self.net_lbl)
+        
         lbl = QLabel("root@hacker_os:~$")
         lbl.setStyleSheet("color: #00FF00; font-weight: bold;")
         footer_layout.addWidget(lbl)
@@ -90,6 +111,21 @@ class MainWindow(QMainWindow):
         Router.instance().navigate_signal.connect(self.switch_page)
         
         self.pending_page = None
+        
+        # Start Net Worker
+        self.net_worker = NetWorker()
+        self.net_worker.stats_signal.connect(self.update_net_stats)
+        self.net_worker.start()
+
+    def update_net_stats(self, online, ping):
+        if online:
+            color = "#00FF00"
+            text = f"NET: ONLINE | PING: {int(ping)}ms"
+        else:
+            color = "#FF0000"
+            text = "NET: OFFLINE"
+        self.net_lbl.setText(text)
+        self.net_lbl.setStyleSheet(f"color: {color}; font-family: 'Consolas'; font-size: 12px; margin-right: 15px;")
 
     def resizeEvent(self, event):
         self.overlay.resize(self.stack.size())
@@ -109,7 +145,13 @@ class MainWindow(QMainWindow):
             self.toggle_chatbot()
         elif cmd.startswith("open "):
             # Open URL in browser
-            url = cmd.split(" ", 1)[1]
+            target = cmd.split(" ", 1)[1]
+            url = target
+            if target == "youtube": url = "https://www.youtube.com"
+            elif target == "google": url = "https://www.google.com"
+            elif target == "github": url = "https://www.github.com"
+            elif target == "reddit": url = "https://www.reddit.com"
+            
             self.switch_page("BROWSER")
             self.pages["BROWSER"].add_new_tab(url)
         elif cmd == "exit":

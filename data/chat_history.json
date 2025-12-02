@@ -1,1 +1,1 @@
-[{"role": "user", "content": "hello world"}, {"role": "assistant", "content": "Error: API Request Failed. 400 Client Error: Bad Request for url: https://api.perplexity.ai/chat/completions"}]
+[{"role": "user", "content": "hello world"}, {"role": "assistant", "content": "Error: API Request Failed. 400 Client Error: Bad Request for url: https://api.perplexity.ai/chat/completions"}, {"role": "user", "content": "tell me about earth"}, {"role": "assistant", "content": "Error: API Request Failed. 400 Client Error: Bad Request for url: https://api.perplexity.ai/chat/completions"}]

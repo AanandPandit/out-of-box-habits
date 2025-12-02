@@ -57,11 +57,15 @@ class MainWindow(QMainWindow):
     def create_menu(self):
         menubar = self.menuBar()
         
+        # Dashboard (Separate Menu)
+        dash_action = QAction("DASHBOARD", self)
+        dash_action.triggered.connect(lambda: self.switch_page("DASHBOARD"))
+        menubar.addAction(dash_action)
+        
         # Navigation
         nav_menu = menubar.addMenu("NAVIGATION")
         
         actions = [
-            ("DASHBOARD", "DASHBOARD"),
             ("HABIT TRACKER", "HABITS"),
             ("PROJECTS", "PROJECTS"),
             ("STRATEGY", "PLANS")
@@ -81,7 +85,8 @@ class MainWindow(QMainWindow):
         # Top Right Clock (Using a corner widget in menu bar)
         self.clock_lbl = QLabel()
         self.clock_lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.clock_lbl.setStyleSheet("font-family: 'Frozen Crystal Condensed', 'Consolas'; color: #00FF00; font-weight: bold; padding-right: 20px; font-size: 16px;")
+        # Time large green, Date smaller grey
+        self.clock_lbl.setStyleSheet("font-family: 'Frozen Crystal Condensed', 'Consolas'; font-weight: bold; padding-right: 20px;")
         
         # Create a container for the clock to add to the menu bar
         corner_widget = QWidget()
@@ -99,11 +104,19 @@ class MainWindow(QMainWindow):
         self.update_clock()
 
     def update_clock(self):
-        # Time on line 1, Date + 3-char Day on line 2
+        # Time on line 1 (Large Green), Date + Day on line 2 (Small Grey)
         now = datetime.now()
         time_str = now.strftime("%H:%M:%S")
-        date_str = now.strftime("%Y-%m-%d %a")
-        self.clock_lbl.setText(f"{time_str}\n{date_str}")
+        date_str = now.strftime("%Y-%m-%d %A")
+        
+        # Use HTML for multi-color/size
+        html = f"""
+        <div style='text-align: right;'>
+            <span style='font-size: 24px; color: #00FF00;'>{time_str}</span><br>
+            <span style='font-size: 14px; color: #888888;'>{date_str}</span>
+        </div>
+        """
+        self.clock_lbl.setText(html)
 
     def switch_page(self, page_name):
         if page_name in self.pages:

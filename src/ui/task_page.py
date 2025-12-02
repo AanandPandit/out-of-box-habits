@@ -306,16 +306,18 @@ class TaskPage(QWidget):
 
     def refresh_history(self):
         self.history_list.clear()
+        # Ensure we are reading from the manager's data which should be loaded
+        if not self.manager.data:
+            self.manager.load_data()
+            
         dates = sorted(self.manager.data.keys(), reverse=True)
         for d in dates:
             try:
                 dt = datetime.strptime(d, "%Y-%m-%d")
-                display = f"{d} ({dt.strftime('%a')})"
+                display = f"{d} ({dt.strftime('%A')})"
             except:
                 display = d
-            item = QListWidget(self.history_list)
             self.history_list.addItem(display)
-            # Store real date in user role if needed, but text parsing is fine for now
             
     def load_history_date(self, item):
         # Extract date string "YYYY-MM-DD" from "YYYY-MM-DD (Day)"

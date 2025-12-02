@@ -52,7 +52,6 @@ QPushButton:hover {
     background-color: #003300;
     border: 1px solid #00FFFF;
     color: #00FFFF;
-    box-shadow: 0 0 10px #00FFFF; /* Glow attempt (Qt supports some CSS3) */
 }
 QPushButton:pressed {
     background-color: #00FF00;

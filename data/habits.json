@@ -24,6 +24,10 @@
             {
                 "text": "dont use instagram",
                 "done": false
+            },
+            {
+                "text": "contack person",
+                "done": false
             }
         ],
         "gratitude": [
@@ -34,6 +38,14 @@
             {
                 "text": "doing good",
                 "done": true
+            },
+            {
+                "text": "helo",
+                "done": false
+            },
+            {
+                "text": "",
+                "done": false
             }
         ],
         "lesson": "learning",

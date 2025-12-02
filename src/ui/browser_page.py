@@ -33,7 +33,7 @@ class BrowserPage(QWidget):
         
         self.url_bar = QLineEdit()
         self.url_bar.setPlaceholderText("ENTER URL...")
-        self.url_bar.setStyleSheet("font-family: 'Consolas'; font-size: 18px; color: #00FF00; background: #000; border: 1px solid #003300; padding: 10px;")
+        self.url_bar.setStyleSheet("font-family: 'Consolas'; font-size: 14px; color: #00FF00; background: #000; border: 1px solid #003300; padding: 4px;")
         self.url_bar.returnPressed.connect(self.navigate_to_url)
         
         nav_layout.addWidget(self.back_btn)
@@ -51,15 +51,15 @@ class BrowserPage(QWidget):
         
         # New Tab Button in Corner
         self.new_tab_btn = QPushButton("+")
-        self.new_tab_btn.setFixedSize(50, 40)
-        self.new_tab_btn.setStyleSheet("font-size: 30px; font-weight: bold; border: none; color: #00FF00; background: transparent;")
+        self.new_tab_btn.setFixedSize(40, 30)
+        self.new_tab_btn.setStyleSheet("font-size: 20px; font-weight: bold; border: none; color: #00FF00; background: transparent;")
         self.new_tab_btn.clicked.connect(lambda: self.add_new_tab())
         self.tabs.setCornerWidget(self.new_tab_btn, Qt.TopRightCorner)
         
         # Style the tabs
         self.tabs.setStyleSheet("""
             QTabWidget::pane { border: 0; background: #000; }
-            QTabBar::tab { background: #111; color: #888; padding: 10px 20px; border-right: 1px solid #333; font-size: 16px; font-weight: bold; }
+            QTabBar::tab { background: #111; color: #888; padding: 4px 10px; border-right: 1px solid #333; font-size: 12px; font-weight: bold; }
             QTabBar::tab:selected { background: #222; color: #00FF00; border-bottom: 2px solid #00FF00; }
         """)
         
@@ -87,9 +87,9 @@ class BrowserPage(QWidget):
         
         # Add Custom Close Button "x"
         close_btn = QPushButton("x")
-        close_btn.setFixedSize(30, 30)
+        close_btn.setFixedSize(20, 20)
         close_btn.setStyleSheet("""
-            QPushButton { border: none; color: #888; font-weight: bold; font-size: 16px; background: transparent; }
+            QPushButton { border: none; color: #00FF00; font-weight: bold; font-size: 14px; background: transparent; }
             QPushButton:hover { color: #FF0000; }
         """)
         close_btn.clicked.connect(lambda _, index=i: self.close_tab(index))

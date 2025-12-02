@@ -60,7 +60,7 @@
         "protocols": [
             {
                 "text": "Drink 5 bottles of water",
-                "done": false
+                "done": true
             },
             {
                 "text": "Take bath",

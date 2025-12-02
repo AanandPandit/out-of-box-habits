@@ -198,7 +198,8 @@ class MainWindow(QMainWindow):
         corner_layout.setContentsMargins(0, 0, 0, 0)
         
         # Net Stats (Moved to Header)
-        self.net_lbl = QLabel("NET: INIT...")
+        self.net_lbl = QLabel("NET: INITIALIZING...")
+        self.net_lbl.setMinimumWidth(150) # Ensure it doesn't collapse
         self.net_lbl.setStyleSheet("color: #888; font-family: 'Consolas'; font-size: 12px; margin-right: 15px;")
         corner_layout.addWidget(self.net_lbl)
         

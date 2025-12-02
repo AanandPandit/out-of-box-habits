@@ -16,24 +16,28 @@ class BrowserPage(QWidget):
         nav_layout.setContentsMargins(5, 5, 5, 5)
         
         self.back_btn = QPushButton("<")
-        self.back_btn.setFixedWidth(30)
+        self.back_btn.setFixedSize(40, 40)
+        self.back_btn.setStyleSheet("font-size: 20px; font-weight: bold; border: 1px solid #00FF00; color: #00FF00; background: #000;")
         self.back_btn.clicked.connect(self.go_back)
         
         self.fwd_btn = QPushButton(">")
-        self.fwd_btn.setFixedWidth(30)
+        self.fwd_btn.setFixedSize(40, 40)
+        self.fwd_btn.setStyleSheet("font-size: 20px; font-weight: bold; border: 1px solid #00FF00; color: #00FF00; background: #000;")
         self.fwd_btn.clicked.connect(self.go_forward)
         
         self.reload_btn = QPushButton("R")
-        self.reload_btn.setFixedWidth(30)
+        self.reload_btn.setFixedSize(40, 40)
+        self.reload_btn.setStyleSheet("font-size: 20px; font-weight: bold; border: 1px solid #00FF00; color: #00FF00; background: #000;")
         self.reload_btn.clicked.connect(self.reload_page)
         
         self.url_bar = QLineEdit()
         self.url_bar.setPlaceholderText("ENTER URL...")
-        self.url_bar.setStyleSheet("font-family: 'Consolas'; color: #00FF00; background: #000; border: 1px solid #003300; padding: 5px;")
+        self.url_bar.setStyleSheet("font-family: 'Consolas'; font-size: 16px; color: #00FF00; background: #000; border: 1px solid #003300; padding: 10px;")
         self.url_bar.returnPressed.connect(self.navigate_to_url)
         
         self.new_tab_btn = QPushButton("+")
-        self.new_tab_btn.setFixedWidth(30)
+        self.new_tab_btn.setFixedSize(40, 40)
+        self.new_tab_btn.setStyleSheet("font-size: 24px; font-weight: bold; border: 1px solid #00FF00; color: #00FF00; background: #000;")
         self.new_tab_btn.clicked.connect(lambda: self.add_new_tab())
         
         nav_layout.addWidget(self.back_btn)
@@ -53,10 +57,11 @@ class BrowserPage(QWidget):
         
         # Style the tabs
         self.tabs.setStyleSheet("""
-            QTabWidget::pane { border: 0; }
-            QTabBar::tab { background: #111; color: #888; padding: 8px; border-right: 1px solid #333; }
+            QTabWidget::pane { border: 0; background: #000; }
+            QTabBar::tab { background: #111; color: #888; padding: 10px 20px; border-right: 1px solid #333; font-size: 14px; }
             QTabBar::tab:selected { background: #222; color: #00FF00; border-bottom: 2px solid #00FF00; }
-            QTabBar::close-button { subcontrol-position: right; }
+            QTabBar::close-button { subcontrol-position: right; margin: 2px; }
+            QTabBar::close-button:hover { background: #FF0000; border-radius: 2px; }
         """)
         
         layout.addWidget(self.tabs)

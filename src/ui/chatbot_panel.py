@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt, QPropertyAnimation, QPoint, QSize, QThread, pyqtSig
 from python.perplexity_chatbot import ask_perplexity
 import json
 import os
+import markdown
 
 CHAT_HISTORY_FILE = "data/chat_history.json"
 
@@ -77,8 +78,27 @@ class ChatbotPanel(QWidget):
         self.input_field.setFocus()
         
     def append_message(self, sender, text):
-        color = "#00FFFF" if sender == "AI" else "#00FF00" 
-        formatted = f'<div style="margin-bottom: 10px;"><b style="color: {color};">[{sender}]:</b> <span style="color: #EEEEEE;">{text}</span></div>'
+        color = "#00FFFF" if sender == "AI" else "#00FF00"
+        
+        if sender == "AI":
+            # Render Markdown
+            try:
+                # Convert markdown to html
+                html_content = markdown.markdown(text, extensions=['fenced_code', 'nl2br', 'tables', 'sane_lists'])
+                
+                # Basic Math handling: Replace $...$ with italic or bold for visibility if markdown didn't catch it
+                # Note: This is a hack because QTextEdit doesn't support MathML/LaTeX
+                # We'll just ensure it's visible.
+                # html_content = html_content.replace('$', '<span style="color:#FF00FF;">$</span>')
+                
+                formatted = f'<div style="margin-bottom: 20px;"><b style="color: {color};">[{sender}]:</b><br><div style="color: #EEEEEE; margin-top: 5px;">{html_content}</div></div>'
+            except Exception as e:
+                # Fallback
+                formatted = f'<div style="margin-bottom: 20px;"><b style="color: {color};">[{sender}]:</b> <span style="color: #EEEEEE;">{text}</span></div>'
+        else:
+            # User message (keep simple)
+            formatted = f'<div style="margin-bottom: 10px;"><b style="color: {color};">[{sender}]:</b> <span style="color: #EEEEEE;">{text}</span></div>'
+            
         self.history_display.append(formatted)
         if sender == "USER":
              self.chat_history.append({"role": "user", "content": text})

@@ -121,6 +121,10 @@ class MainWindow(QMainWindow):
             text = "NET: OFFLINE"
         self.net_lbl.setText(text)
         self.net_lbl.setStyleSheet(f"color: {color}; font-family: 'Consolas'; font-size: 12px; margin-right: 15px;")
+        
+        # Update Chatbot Status
+        if hasattr(self, 'chatbot'):
+            self.chatbot.set_online_status(online)
 
     def resizeEvent(self, event):
         self.overlay.resize(self.stack.size())

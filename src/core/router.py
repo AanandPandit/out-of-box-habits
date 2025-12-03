@@ -2,6 +2,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 class Router(QObject):
     navigate_signal = pyqtSignal(str) # Page name
+    data_changed = pyqtSignal() # New signal for data sync
 
     _instance = None
 

@@ -58,6 +58,18 @@ class ChatbotPanel(QWidget):
         self.worker = None
         
         self.load_history()
+        
+    def set_online_status(self, is_online):
+        if is_online:
+            self.input_field.setEnabled(True)
+            self.send_btn.setEnabled(True)
+            self.input_field.setPlaceholderText("Enter command...")
+            self.input_field.setStyleSheet("font-family: 'Consolas'; font-size: 14px; background-color: #050505; border: 1px solid #003300; color: #00FF00; padding: 5px;")
+        else:
+            self.input_field.setEnabled(False)
+            self.send_btn.setEnabled(False)
+            self.input_field.setPlaceholderText("⚠ OFFLINE - CONNECT TO INTERNET")
+            self.input_field.setStyleSheet("font-family: 'Consolas'; font-size: 14px; background-color: #110000; border: 1px solid #330000; color: #550000; padding: 5px;")
 
     def send_message(self):
         text = self.input_field.text().strip()

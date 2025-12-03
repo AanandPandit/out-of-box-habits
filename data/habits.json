@@ -86,7 +86,7 @@
             },
             {
                 "text": "Study ROS2 for 1 hour",
-                "done": false
+                "done": true
             },
             {
                 "text": "Study DS from 9.30 pm to onwards from codingninja",
@@ -121,7 +121,7 @@
                 "done": true
             }
         ],
-        "lesson": "Fake it till you make it; ",
+        "lesson": "Fake it till you make it; have to improve a lot as I am ignoring all things, I need to control thoughts and actions.",
         "mood": 5,
         "productivity": 3
     },
@@ -159,6 +159,10 @@
             {
                 "text": "NO sleeping before 12 night and no sleeping in daytime",
                 "done": false
+            },
+            {
+                "text": "Take a bath",
+                "done": true
             }
         ],
         "main": [
@@ -171,7 +175,11 @@
                 "done": false
             },
             {
-                "text": "",
+                "text": "Make the laptop storage clean",
+                "done": false
+            },
+            {
+                "text": "ML pipeline learning",
                 "done": false
             }
         ],
@@ -185,7 +193,7 @@
                 "done": false
             },
             {
-                "text": "",
+                "text": "Go for walk in the evening",
                 "done": false
             }
         ],

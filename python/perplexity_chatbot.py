@@ -84,6 +84,8 @@ def ask_perplexity(prompt: str, history: list = None) -> str:
         else:
             return "Error: No response content from AI."
             
+    except requests.exceptions.ConnectionError:
+        return "⚠ OFFLINE: Please connect to the internet to establish uplink."
     except requests.exceptions.RequestException as e:
         return f"Network error: {str(e)}"
     except Exception as e:

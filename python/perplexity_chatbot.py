@@ -2,17 +2,17 @@ import requests
 import json
 import os
 import re
+from dotenv import load_dotenv
 
-# Updated API Key and Model
-# Using the key provided by user in history as default if env not set
-DEFAULT_KEY = "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"
+# Load environment variables
+load_dotenv()
 
 def ask_perplexity(prompt: str, history: list = None) -> str:
     """
     Sends a prompt to the Perplexity API and returns the response.
     """
     # Get API key at runtime
-    api_key = os.getenv("PERPLEXITY_API_KEY", DEFAULT_KEY)
+    api_key = os.getenv("PERPLEXITY_API_KEY")
     
     if not api_key:
         return "Error: Perplexity API Key not configured."

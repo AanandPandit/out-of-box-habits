@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, 
                              QPushButton, QLabel, QFrame, QTabWidget, QTabBar, QShortcut)
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
 from PyQt5.QtCore import QUrl, Qt, QSize
 from PyQt5.QtGui import QKeySequence
 
@@ -78,6 +78,15 @@ class BrowserPage(QWidget):
     def add_new_tab(self, url="https://www.google.com"):
         browser = QWebEngineView()
         browser.setStyleSheet("background-color: #222;") # Set background to avoid white flash
+        
+        # Enable Features
+        settings = browser.settings()
+        settings.setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        settings.setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        settings.setAttribute(QWebEngineSettings.LocalStorageEnabled, True)
+        settings.setAttribute(QWebEngineSettings.WebGLEnabled, True)
+        settings.setAttribute(QWebEngineSettings.PlaybackRequiresUserGesture, False)
+        
         browser.setUrl(QUrl(url))
         browser.urlChanged.connect(lambda q, b=browser: self.update_tab_title(b, q))
         browser.loadFinished.connect(lambda _, b=browser: b.show()) # Ensure show is called after load

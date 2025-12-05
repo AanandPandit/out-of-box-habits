@@ -4,6 +4,7 @@ from datetime import datetime
 from src.core.data_manager import DataManager
 from src.core.habits_manager import HabitsManager
 from src.core.cpp_bridge import CppBridge
+from src.core.router import Router
 
 class StatCard(QFrame):
     def __init__(self, title, value):
@@ -68,8 +69,6 @@ class DashboardPage(QWidget):
         self.matrix_timer.timeout.connect(self.update_matrix)
         self.matrix_timer.start(100)
         
-from src.core.router import Router
-
         self.refresh_stats()
         
         # Listen for updates

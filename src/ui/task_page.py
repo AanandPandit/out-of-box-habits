@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt, QDate, pyqtSignal
 from PyQt5.QtGui import QIntValidator
 from src.core.habits_manager import HabitsManager
 from src.core.stats_manager import StatsManager
+from src.core.router import Router
 from datetime import datetime
 
 class ClickableLabel(QLabel):
@@ -361,8 +362,6 @@ class TaskPage(QWidget):
         self.mood_input['input'].setReadOnly(readonly)
         self.prod_input['input'].setReadOnly(readonly)
         self.save_btn.setVisible(not readonly)
-
-from src.core.router import Router
 
     def save_current_day(self):
         # Don't save if read-only (double check, though UI should prevent it)

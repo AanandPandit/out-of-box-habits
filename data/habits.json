@@ -142,11 +142,11 @@
             },
             {
                 "text": "Drink 5 bottles of water",
-                "done": false
+                "done": true
             },
             {
                 "text": "Pushup and body exercise",
-                "done": false
+                "done": true
             },
             {
                 "text": "No porns",
@@ -168,7 +168,7 @@
         "main": [
             {
                 "text": "ROS2 for 1 hour",
-                "done": false
+                "done": true
             },
             {
                 "text": "DS for 3 hours",
@@ -176,7 +176,7 @@
             },
             {
                 "text": "Make the laptop storage clean",
-                "done": false
+                "done": true
             },
             {
                 "text": "ML pipeline learning",
@@ -207,6 +207,114 @@
                 "done": true
             }
         ],
+        "lesson": "",
+        "mood": 5,
+        "productivity": 5
+    },
+    "2025-12-04": {
+        "protocols": [
+            {
+                "text": "Take bath at 10am",
+                "done": true
+            },
+            {
+                "text": "Only PG food",
+                "done": true
+            },
+            {
+                "text": "Body Exercise",
+                "done": true
+            },
+            {
+                "text": "Drink 5 bottles of water",
+                "done": true
+            },
+            {
+                "text": "Focus consistency in learning",
+                "done": false
+            },
+            {
+                "text": "mobile time limit 5 hours only",
+                "done": false
+            }
+        ],
+        "main": [
+            {
+                "text": "Supervised Learning complete",
+                "done": false
+            },
+            {
+                "text": "Unsupervised Learning complete",
+                "done": false
+            },
+            {
+                "text": "Start DSA learning",
+                "done": false
+            },
+            {
+                "text": "Practice AI interview and read interview ",
+                "done": true
+            },
+            {
+                "text": "Attend interview at 10pm",
+                "done": true
+            }
+        ],
+        "outreach": [
+            {
+                "text": "Apply for job - 10",
+                "done": true
+            },
+            {
+                "text": "Go for temple in the evening",
+                "done": false
+            }
+        ],
+        "gratitude": [],
+        "lesson": "Improve the interview skills; keep consistency; stop watching porn",
+        "mood": 8,
+        "productivity": 5
+    },
+    "2025-12-05": {
+        "protocols": [
+            {
+                "text": "Drink 5 bottles of water",
+                "done": false
+            },
+            {
+                "text": "Hit Exercise",
+                "done": false
+            },
+            {
+                "text": "PG food only",
+                "done": false
+            },
+            {
+                "text": "Mobile usage limit 5hrs",
+                "done": false
+            }
+        ],
+        "main": [
+            {
+                "text": "Complete Supervised learning",
+                "done": false
+            },
+            {
+                "text": "DSA start",
+                "done": false
+            }
+        ],
+        "outreach": [
+            {
+                "text": "Apply for job - 10",
+                "done": false
+            },
+            {
+                "text": "Go for walk in the evening",
+                "done": false
+            }
+        ],
+        "gratitude": [],
         "lesson": "",
         "mood": 5,
         "productivity": 5

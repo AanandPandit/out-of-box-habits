@@ -362,6 +362,8 @@ class TaskPage(QWidget):
         self.prod_input['input'].setReadOnly(readonly)
         self.save_btn.setVisible(not readonly)
 
+from src.core.router import Router
+
     def save_current_day(self):
         # Don't save if read-only (double check, though UI should prevent it)
         today_str = datetime.now().strftime("%Y-%m-%d")
@@ -387,6 +389,9 @@ class TaskPage(QWidget):
         self.manager.update_day(self.current_date, data)
         self.update_stats_display()
         self.refresh_history() # Refresh in case it's a new day
+        
+        # Emit Global Data Changed Signal
+        Router.instance().data_changed.emit()
 
     def refresh_history(self):
         self.history_list.clear()

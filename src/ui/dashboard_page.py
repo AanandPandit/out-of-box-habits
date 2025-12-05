@@ -68,7 +68,12 @@ class DashboardPage(QWidget):
         self.matrix_timer.timeout.connect(self.update_matrix)
         self.matrix_timer.start(100)
         
+from src.core.router import Router
+
         self.refresh_stats()
+        
+        # Listen for updates
+        Router.instance().data_changed.connect(self.refresh_stats)
 
     def refresh_stats(self):
         tasks = self.data_manager.get_tasks()

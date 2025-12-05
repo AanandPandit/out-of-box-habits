@@ -302,6 +302,10 @@
             {
                 "text": "DSA start",
                 "done": false
+            },
+            {
+                "text": "AI interview practice",
+                "done": false
             }
         ],
         "outreach": [

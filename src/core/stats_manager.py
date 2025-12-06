@@ -40,12 +40,27 @@ class StatsManager:
     def get_productivity_trend(self, days=7):
         dates = sorted(self.habits_manager.data.keys())[-days:]
         trend = []
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        
         for d in dates:
             day = self.habits_manager.data[d]
+            
+            completed = 0
+            missed = 0
+            for section in ['protocols', 'main', 'outreach']:
+                tasks = day.get(section, [])
+                for t in tasks:
+                    if t.get('done', False):
+                        completed += 1
+                    elif d < today_str:
+                        missed += 1
+            
             trend.append({
                 "date": d,
                 "productivity": day.get('productivity', 0),
-                "mood": day.get('mood', 0)
+                "mood": day.get('mood', 0),
+                "completed": completed,
+                "missed": missed
             })
         return trend
 

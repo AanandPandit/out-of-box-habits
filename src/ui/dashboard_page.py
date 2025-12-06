@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, 
-                             QFrame, QScrollArea, QPushButton, QProgressBar, QSizePolicy, QInputDialog)
+                             QFrame, QScrollArea, QPushButton, QProgressBar, QSizePolicy, QInputDialog, QComboBox)
 from PyQt5.QtCore import QTimer, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
 from datetime import datetime
@@ -103,39 +103,83 @@ class SystemMonitor(QWidget):
         self.uptime_lbl.setText(f"UPTIME: {str(delta).split('.')[0]}")
 
 class ChartsPanel(QWidget):
+    filter_changed = pyqtSignal(int) # Emits days count
+
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0,0,0,0)
+        
+        # Filter Dropdown
+        self.filter_combo = QComboBox()
+        self.filter_combo.addItems(["Last 7 Days", "Last 30 Days", "All Time"])
+        self.filter_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #111;
+                color: #00FF00;
+                border: 1px solid #003300;
+                padding: 5px;
+                font-family: 'Consolas';
+            }
+            QComboBox::drop-down { border: none; }
+            QComboBox QAbstractItemView {
+                background-color: #111;
+                color: #00FF00;
+                selection-background-color: #003300;
+            }
+        """)
+        self.filter_combo.currentIndexChanged.connect(self.on_filter_change)
+        
+        # Header layout for filter
+        header = QHBoxLayout()
+        header.addStretch()
+        header.addWidget(self.filter_combo)
+        layout.addLayout(header)
         
         self.figure = Figure(facecolor='#050505')
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setStyleSheet("background-color: #050505; border: none;")
         layout.addWidget(self.canvas)
         
-    def plot_data(self, weekly_data, improvement_trend):
+    def on_filter_change(self, index):
+        days = 7
+        if index == 1: days = 30
+        elif index == 2: days = 365 # All time approx
+        self.filter_changed.emit(days)
+        
+    def plot_data(self, trend_data):
         self.figure.clear()
         
         # Dark theme for plots
         plt.style.use('dark_background')
         
-        # Single Graph: Productivity Trend
+        # Single Graph: Multi-metric Trend
         ax = self.figure.add_subplot(111)
         ax.set_facecolor('#050505')
         
         # Data
-        x = range(len(improvement_trend))
-        y_prod = [d['productivity'] for d in improvement_trend]
-        y_mood = [d['mood'] for d in improvement_trend]
+        x = range(len(trend_data))
+        y_prod = [d['productivity'] for d in trend_data]
+        y_mood = [d['mood'] for d in trend_data]
+        y_comp = [d['completed'] for d in trend_data]
+        y_missed = [d['missed'] for d in trend_data]
         
         # Plot Lines
         ax.plot(x, y_prod, color='#00FFFF', marker='o', markersize=4, label='Productivity', linewidth=2)
         ax.plot(x, y_mood, color='#FF00FF', marker='x', markersize=4, label='Mood', linewidth=1, linestyle='--')
+        ax.plot(x, y_comp, color='#00FF00', marker='s', markersize=4, label='Completed', linewidth=1.5)
+        ax.plot(x, y_missed, color='#FF0000', marker='v', markersize=4, label='Missed', linewidth=1.5)
         
-        ax.set_title('PERFORMANCE TRENDS', fontsize=10, color='#00FF00')
+        ax.set_title('PERFORMANCE METRICS', fontsize=10, color='#00FF00')
         ax.tick_params(labelsize=8, colors='#888')
-        ax.legend(fontsize=8, facecolor='#111', edgecolor='#333')
+        ax.legend(fontsize=8, facecolor='#111', edgecolor='#333', loc='upper left')
         ax.grid(True, color='#111', linestyle='--')
+        
+        # Set x-axis labels to dates if few enough points
+        if len(trend_data) <= 14:
+            dates = [d['date'][5:] for d in trend_data] # MM-DD
+            ax.set_xticks(x)
+            ax.set_xticklabels(dates, rotation=45)
         
         self.figure.tight_layout()
         self.canvas.draw()

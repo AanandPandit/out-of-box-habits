@@ -5,6 +5,8 @@ from PyQt5.QtGui import QColor, QFont
 from datetime import datetime
 import psutil
 import sys
+import requests
+import socket
 
 # Matplotlib integration
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -19,27 +21,44 @@ from src.core.cpp_bridge import CppBridge
 
 # --- Custom Widgets ---
 
-class Panel(QFrame):
-    def __init__(self, title, parent=None):
+class Panel(QWidget):
+    def __init__(self, title, color_hex="#00FF00", parent=None, header_widget=None):
         super().__init__(parent)
-        self.setStyleSheet("""
-            QFrame {
-                background-color: #050505;
-                border: 1px solid #003300;
-                border-radius: 5px;
-            }
-        """)
         self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
         
-        if title:
-            self.title_lbl = QLabel(title)
-            self.title_lbl.setStyleSheet("color: #00FF00; font-weight: bold; font-size: 14px; border: none;")
-            self.layout.addWidget(self.title_lbl)
+        # Header Frame (Consistent with CollapsiblePanel but not clickable)
+        self.header_frame = QFrame()
+        self.header_frame.setObjectName("HeaderFrame")
+        self.header_frame.setStyleSheet(f"""
+            #HeaderFrame {{
+                background-color: #111;
+                border: 1px solid {color_hex};
+                border-bottom: 2px solid {color_hex}; 
+            }}
+        """)
+        
+        header_layout = QHBoxLayout(self.header_frame)
+        header_layout.setContentsMargins(5, 5, 5, 5)
+        
+        self.title_lbl = QLabel(title)
+        self.title_lbl.setStyleSheet(f"color: {color_hex}; font-weight: bold; font-size: 16px; border: none; background: transparent;")
+        header_layout.addWidget(self.title_lbl)
+        
+        header_layout.addStretch()
+        
+        if header_widget:
+            header_layout.addWidget(header_widget)
             
-            line = QFrame()
-            line.setFrameShape(QFrame.HLine)
-            line.setStyleSheet("color: #003300; border: 1px solid #003300;")
-            self.layout.addWidget(line)
+        self.layout.addWidget(self.header_frame)
+        
+        # Content Area
+        self.content_area = QWidget()
+        self.content_area.setStyleSheet(f"border: 1px solid {color_hex}; border-top: none;")
+        self.content_layout = QVBoxLayout(self.content_area)
+        self.content_layout.setContentsMargins(5, 5, 5, 5)
+        self.layout.addWidget(self.content_area)
 
 class CollapsiblePanel(QWidget):
     def __init__(self, title, color_hex="#00FF00", parent=None, header_widget=None):
@@ -76,6 +95,7 @@ class CollapsiblePanel(QWidget):
         
         # Content Area
         self.content_area = QWidget()
+        self.content_area.setStyleSheet(f"border: 1px solid {color_hex}; border-top: none;")
         self.content_layout = QVBoxLayout(self.content_area)
         self.content_layout.setContentsMargins(5, 5, 5, 5)
         self.layout.addWidget(self.content_area)
@@ -84,9 +104,12 @@ class CollapsiblePanel(QWidget):
         if self.content_area.isVisible():
             self.content_area.hide()
             self.toggle_lbl.setText(self.toggle_lbl.text().replace("▼", "▶"))
+            self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         else:
             self.content_area.show()
             self.toggle_lbl.setText(self.toggle_lbl.text().replace("▶", "▼"))
+            self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.updateGeometry()
 
 class StatValue(QWidget):
     def __init__(self, label, value, color="#00FFFF"):
@@ -150,49 +173,15 @@ class SystemMonitor(QWidget):
         self.uptime_lbl.setText(f"UPTIME: {str(delta).split('.')[0]}")
 
 class ChartsPanel(QWidget):
-    filter_changed = pyqtSignal(int) # Emits days count
-
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0,0,0,0)
         
-        # Filter Dropdown
-        self.filter_combo = QComboBox()
-        self.filter_combo.addItems(["Last 7 Days", "Last 30 Days", "All Time"])
-        self.filter_combo.setStyleSheet("""
-            QComboBox {
-                background-color: #111;
-                color: #00FF00;
-                border: 1px solid #003300;
-                padding: 5px;
-                font-family: 'Consolas';
-            }
-            QComboBox::drop-down { border: none; }
-            QComboBox QAbstractItemView {
-                background-color: #111;
-                color: #00FF00;
-                selection-background-color: #003300;
-            }
-        """)
-        self.filter_combo.currentIndexChanged.connect(self.on_filter_change)
-        
-        # Header layout for filter
-        header = QHBoxLayout()
-        header.addStretch()
-        header.addWidget(self.filter_combo)
-        layout.addLayout(header)
-        
         self.figure = Figure(facecolor='#050505')
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setStyleSheet("background-color: #050505; border: none;")
         layout.addWidget(self.canvas)
-        
-    def on_filter_change(self, index):
-        days = 7
-        if index == 1: days = 30
-        elif index == 2: days = 365 # All time approx
-        self.filter_changed.emit(days)
         
     def plot_data(self, trend_data):
         self.figure.clear()
@@ -366,9 +355,9 @@ class DashboardPage(QWidget):
         self.layout.setSpacing(10)
         
         # 1. Daily Task Performance Panel (Top Left)
-        self.perf_panel = Panel("DAILY PERFORMANCE")
+        self.perf_panel = Panel("DAILY PERFORMANCE", "#00FF00")
         perf_layout = QGridLayout()
-        self.perf_panel.layout.addLayout(perf_layout)
+        self.perf_panel.content_layout.addLayout(perf_layout)
         
         self.stat_total = StatValue("TOTAL", 0)
         self.stat_done = StatValue("DONE", 0, "#00FF00")
@@ -387,22 +376,43 @@ class DashboardPage(QWidget):
         self.layout.addWidget(self.perf_panel, 0, 0, 1, 1)
         
         # 2. System Status Panel (Top Right)
-        self.sys_panel = Panel("SYSTEM STATUS")
+        self.sys_panel = Panel("SYSTEM STATUS", "#00FFFF")
         self.sys_monitor = SystemMonitor()
-        self.sys_panel.layout.addWidget(self.sys_monitor)
+        self.sys_panel.content_layout.addWidget(self.sys_monitor)
         
         # Add AI Uplink Status
-        self.ai_status = QLabel("AI UPLINK: ONLINE")
-        self.ai_status.setStyleSheet("color: #00FFFF; font-size: 10px; border: none; margin-top: 5px;")
-        self.sys_panel.layout.addWidget(self.ai_status)
+        self.ai_status = QLabel("AI UPLINK: CHECKING...")
+        self.ai_status.setStyleSheet("color: #FFFF00; font-size: 10px; border: none; margin-top: 5px;")
+        self.sys_panel.content_layout.addWidget(self.ai_status)
         
         self.layout.addWidget(self.sys_panel, 0, 1, 1, 1)
         
         # 3. Charts Section (Middle Left - Spanning)
-        self.charts_panel = Panel("ANALYTICS")
+        # Filter Dropdown for Header
+        self.filter_combo = QComboBox()
+        self.filter_combo.addItems(["Last 7 Days", "Last 30 Days", "All Time"])
+        self.filter_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #111;
+                color: #FF00FF;
+                border: 1px solid #FF00FF;
+                padding: 2px;
+                font-family: 'Consolas';
+                font-size: 10px;
+                min-width: 100px;
+            }
+            QComboBox::drop-down { border: none; }
+            QComboBox QAbstractItemView {
+                background-color: #111;
+                color: #FF00FF;
+                selection-background-color: #330033;
+            }
+        """)
+        self.filter_combo.currentIndexChanged.connect(self.on_filter_change)
+
+        self.charts_panel = Panel("ANALYTICS", "#FF00FF", header_widget=self.filter_combo)
         self.charts = ChartsPanel()
-        self.charts.filter_changed.connect(self.update_charts)
-        self.charts_panel.layout.addWidget(self.charts)
+        self.charts_panel.content_layout.addWidget(self.charts)
         self.layout.addWidget(self.charts_panel, 1, 0, 2, 1)
         
         # 4. Long Term Goals Panel (Middle Right)
@@ -436,9 +446,15 @@ class DashboardPage(QWidget):
         self.timer.start(2000) # Refresh every 2s
         
         self.sys_timer = QTimer(self)
-        self.sys_timer.timeout.connect(self.sys_monitor.update_stats)
+        self.sys_timer.timeout.connect(self.update_system_stats)
         self.sys_timer.start(1000)
         
+        # Internet Check Timer (every 10s)
+        self.net_timer = QTimer(self)
+        self.net_timer.timeout.connect(self.check_internet)
+        self.net_timer.start(10000)
+        QTimer.singleShot(100, self.check_internet) # Initial check
+
         self.current_days_filter = 7
         
         # Initial Load
@@ -446,6 +462,26 @@ class DashboardPage(QWidget):
         
         # Listen for updates
         Router.instance().data_changed.connect(self.refresh_data)
+
+    def update_system_stats(self):
+        self.sys_monitor.update_stats()
+
+    def check_internet(self):
+        try:
+            # Fast check
+            requests.get("http://www.google.com", timeout=2)
+            self.ai_status.setText("AI UPLINK: ONLINE")
+            self.ai_status.setStyleSheet("color: #00FF00; font-size: 10px; border: none; margin-top: 5px;")
+        except:
+            self.ai_status.setText("AI UPLINK: OFFLINE")
+            self.ai_status.setStyleSheet("color: #FF0000; font-size: 10px; border: none; margin-top: 5px;")
+
+    def on_filter_change(self, index):
+        days = 7
+        if index == 1: days = 30
+        elif index == 2: days = 365
+        self.current_days_filter = days
+        self.refresh_data()
 
     def add_goal(self):
         dialog = TerminalDialog(self)
@@ -469,8 +505,8 @@ class DashboardPage(QWidget):
         Router.instance().data_changed.emit()
 
     def update_charts(self, days):
-        self.current_days_filter = days
-        self.refresh_data()
+        # Deprecated, handled by on_filter_change
+        pass
 
     def refresh_data(self):
         today_str = datetime.now().strftime("%Y-%m-%d")

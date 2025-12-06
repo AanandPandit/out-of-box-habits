@@ -56,17 +56,28 @@ class DataManager:
         self.save_data()
 
     # --- Projects ---
-    def add_project(self, name, description):
+    def add_project(self, name, description, deadline=None):
         project = {
             "id": int(datetime.now().timestamp() * 1000),
             "name": name,
             "description": description,
             "progress": 0,
-            "tasks": []
+            "tasks": [],
+            "deadline": deadline,
+            "completed": False
         }
         self.data["projects"].append(project)
         self.save_data()
         return project
+
+    def toggle_project(self, project_id):
+        for p in self.data["projects"]:
+            if p["id"] == project_id:
+                p["completed"] = not p.get("completed", False)
+                # If completed, set progress to 100, else 0 (simplified)
+                p["progress"] = 100 if p["completed"] else 0
+                break
+        self.save_data()
 
     def get_projects(self):
         return self.data["projects"]

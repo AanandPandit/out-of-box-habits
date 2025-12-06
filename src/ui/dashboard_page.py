@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, 
-                             QFrame, QScrollArea, QPushButton, QProgressBar, QSizePolicy, QInputDialog, QComboBox)
+                             QFrame, QScrollArea, QPushButton, QProgressBar, QSizePolicy, QInputDialog, QComboBox, QDialog, QLineEdit, QCalendarWidget, QDialogButtonBox)
 from PyQt5.QtCore import QTimer, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
 from datetime import datetime
@@ -184,6 +184,125 @@ class ChartsPanel(QWidget):
         self.figure.tight_layout()
         self.canvas.draw()
 
+class TerminalDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #050505;
+                border: 2px solid #00FF00;
+            }
+            QLabel {
+                color: #00FF00;
+                font-family: 'Consolas';
+                font-size: 14px;
+            }
+            QLineEdit {
+                background-color: #111;
+                color: #00FF00;
+                border: 1px solid #003300;
+                padding: 5px;
+                font-family: 'Consolas';
+            }
+            QPushButton {
+                background-color: #111;
+                color: #00FF00;
+                border: 1px solid #003300;
+                padding: 5px 15px;
+                font-family: 'Consolas';
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #003300;
+                color: #00FFFF;
+            }
+        """)
+        self.setFixedSize(400, 250)
+        
+        layout = QVBoxLayout(self)
+        
+        # Title
+        title = QLabel(">> ADD_LONG_TERM_GOAL")
+        title.setStyleSheet("font-weight: bold; font-size: 16px; margin-bottom: 10px;")
+        layout.addWidget(title)
+        
+        # Goal Input
+        layout.addWidget(QLabel("GOAL_OBJECTIVE:"))
+        self.goal_input = QLineEdit()
+        self.goal_input.setPlaceholderText("Enter your goal...")
+        layout.addWidget(self.goal_input)
+        
+        # Date Input
+        layout.addWidget(QLabel("TARGET_DATE (YYYY-MM-DD):"))
+        self.date_input = QLineEdit()
+        self.date_input.setPlaceholderText(datetime.now().strftime("%Y-%m-%d"))
+        layout.addWidget(self.date_input)
+        
+        layout.addStretch()
+        
+        # Buttons
+        btn_layout = QHBoxLayout()
+        cancel_btn = QPushButton("CANCEL")
+        cancel_btn.clicked.connect(self.reject)
+        
+        ok_btn = QPushButton("CONFIRM")
+        ok_btn.clicked.connect(self.accept)
+        
+        btn_layout.addStretch()
+        btn_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(ok_btn)
+        layout.addLayout(btn_layout)
+
+    def get_data(self):
+        return self.goal_input.text(), self.date_input.text()
+
+class GoalItem(QWidget):
+    toggled = pyqtSignal(int) # Emits project ID
+
+    def __init__(self, project, parent=None):
+        super().__init__(parent)
+        self.project = project
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 2, 0, 2)
+        
+        # Checkbox style label
+        self.status_lbl = QLabel("[x]" if project.get('completed') else "[ ]")
+        self.status_lbl.setStyleSheet(f"font-family: 'Consolas'; font-weight: bold; color: {'#00FFFF' if project.get('completed') else '#00FF00'}; margin-right: 5px;")
+        self.status_lbl.setCursor(Qt.PointingHandCursor)
+        self.status_lbl.mouseReleaseEvent = self.on_toggle
+        
+        # Goal Text
+        self.text_lbl = QLabel(project['name'])
+        style = "color: #AAAAAA; text-decoration: line-through;" if project.get('completed') else "color: #00FF00;"
+        self.text_lbl.setStyleSheet(f"font-family: 'Consolas'; font-size: 12px; border: none; {style}")
+        
+        layout.addWidget(self.status_lbl)
+        layout.addWidget(self.text_lbl)
+        layout.addStretch()
+        
+        # Deadline / Days Left
+        deadline = project.get('deadline')
+        if deadline and not project.get('completed'):
+            try:
+                target = datetime.strptime(deadline, "%Y-%m-%d")
+                delta = (target - datetime.now()).days
+                if delta < 0:
+                    time_str = f"OVERDUE ({abs(delta)}d)"
+                    color = "#FF0000"
+                else:
+                    time_str = f"{delta}d LEFT"
+                    color = "#FFFF00"
+                
+                time_lbl = QLabel(time_str)
+                time_lbl.setStyleSheet(f"color: {color}; font-size: 10px; font-weight: bold;")
+                layout.addWidget(time_lbl)
+            except:
+                pass
+
+    def on_toggle(self, event):
+        self.toggled.emit(self.project['id'])
+
 # --- Main Dashboard Page ---
 
 class DashboardPage(QWidget):
@@ -284,10 +403,23 @@ class DashboardPage(QWidget):
         Router.instance().data_changed.connect(self.refresh_data)
 
     def add_goal(self):
-        text, ok = QInputDialog.getText(self, "Add Life Goal", "Enter your long-term objective:")
-        if ok and text:
-            self.data_manager.add_project(text, "Life Goal") # Using add_project as proxy for goals
-            self.refresh_data()
+        dialog = TerminalDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            goal, date = dialog.get_data()
+            if goal:
+                # Validate date
+                try:
+                    if date:
+                        datetime.strptime(date, "%Y-%m-%d")
+                except ValueError:
+                    date = None # Invalid date, ignore
+                
+                self.data_manager.add_project(goal, "Life Goal", deadline=date)
+                self.refresh_data()
+
+    def toggle_goal(self, project_id):
+        self.data_manager.toggle_project(project_id)
+        self.refresh_data()
 
     def update_charts(self, days):
         self.current_days_filter = days
@@ -325,7 +457,7 @@ class DashboardPage(QWidget):
         trend = self.stats_manager.get_productivity_trend(self.current_days_filter)
         self.charts.plot_data(trend)
         
-        # 3. Update Objectives (Mocking from DataManager projects for now)
+        # 3. Update Objectives (Goals)
         # Clear old
         while self.obj_layout.count() > 1: # Keep header at index 0
             item = self.obj_layout.takeAt(1)
@@ -335,10 +467,10 @@ class DashboardPage(QWidget):
         if not projects:
             self.obj_layout.addWidget(QLabel("NO GOALS SET", styleSheet="color: #666; font-style: italic; border: none;"))
         else:
-            for p in projects: # Show all
-                lbl = QLabel(f"★ {p['name']}")
-                lbl.setStyleSheet("color: #00FFFF; font-size: 12px; border: none; padding: 2px;")
-                self.obj_layout.addWidget(lbl)
+            for p in projects:
+                item = GoalItem(p)
+                item.toggled.connect(self.toggle_goal)
+                self.obj_layout.addWidget(item)
                 
         # 4. Update Timeline
         while self.timeline_layout.count():

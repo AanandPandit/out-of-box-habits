@@ -46,6 +46,8 @@ class StatsManager:
             day = self.habits_manager.data[d]
             
             protocols_completed = 0
+            completed = 0
+            missed = 0
             for section in ['protocols', 'main', 'outreach']:
                 tasks = day.get(section, [])
                 for t in tasks:

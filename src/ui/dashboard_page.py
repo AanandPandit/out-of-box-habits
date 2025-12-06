@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, 
-                             QFrame, QScrollArea, QPushButton, QProgressBar, QSizePolicy)
+                             QFrame, QScrollArea, QPushButton, QProgressBar, QSizePolicy, QInputDialog)
 from PyQt5.QtCore import QTimer, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
 from datetime import datetime
@@ -119,51 +119,23 @@ class ChartsPanel(QWidget):
         # Dark theme for plots
         plt.style.use('dark_background')
         
-        # 1. Bar Chart: Weekly Summary (Completed vs Missed)
-        ax1 = self.figure.add_subplot(221)
-        ax1.set_facecolor('#050505')
+        # Single Graph: Productivity Trend
+        ax = self.figure.add_subplot(111)
+        ax.set_facecolor('#050505')
         
-        # Mock data for last 7 days if not enough real data
-        days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        completed = [5, 7, 6, 8, 5, 9, 4] # Placeholder
-        missed = [1, 0, 2, 0, 1, 0, 1] # Placeholder
-        
-        # Use real data if available (simplified for now as passing complex data is tricky)
-        # In a real scenario, we'd parse `weekly_data` properly.
-        
-        ax1.bar(days, completed, color='#00FF00', label='Done')
-        ax1.bar(days, missed, bottom=completed, color='#FF0000', label='Missed')
-        ax1.set_title('WEEKLY PERFORMANCE', fontsize=8, color='#00FF00')
-        ax1.tick_params(axis='x', labelsize=6, colors='#888')
-        ax1.tick_params(axis='y', labelsize=6, colors='#888')
-        ax1.legend(fontsize=6, facecolor='#111', edgecolor='#333')
-        
-        # 2. Line Chart: Improvement Trend
-        ax2 = self.figure.add_subplot(222)
-        ax2.set_facecolor('#050505')
+        # Data
         x = range(len(improvement_trend))
-        y = [d['productivity'] for d in improvement_trend]
-        ax2.plot(x, y, color='#00FFFF', marker='o', markersize=3)
-        ax2.set_title('PRODUCTIVITY TREND', fontsize=8, color='#00FFFF')
-        ax2.tick_params(labelsize=6, colors='#888')
+        y_prod = [d['productivity'] for d in improvement_trend]
+        y_mood = [d['mood'] for d in improvement_trend]
         
-        # 3. Pie Chart: Weekly Breakdown
-        ax3 = self.figure.add_subplot(212)
-        # ax3.set_facecolor('#050505') # Pie chart doesn't use facecolor the same way
+        # Plot Lines
+        ax.plot(x, y_prod, color='#00FFFF', marker='o', markersize=4, label='Productivity', linewidth=2)
+        ax.plot(x, y_mood, color='#FF00FF', marker='x', markersize=4, label='Mood', linewidth=1, linestyle='--')
         
-        labels = ['Completed', 'Missed', 'Pending']
-        sizes = [weekly_data['completed'], weekly_data['missed'], weekly_data['pending']]
-        colors = ['#00FF00', '#FF0000', '#FFFF00']
-        
-        # Avoid empty pie
-        if sum(sizes) == 0:
-            sizes = [1]
-            labels = ['No Data']
-            colors = ['#333']
-            
-        wedges, texts, autotexts = ax3.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', 
-                                           textprops={'color': '#888', 'fontsize': 8}, startangle=90)
-        ax3.set_title('WEEKLY BREAKDOWN', fontsize=8, color='#FFFF00')
+        ax.set_title('PERFORMANCE TRENDS', fontsize=10, color='#00FF00')
+        ax.tick_params(labelsize=8, colors='#888')
+        ax.legend(fontsize=8, facecolor='#111', edgecolor='#333')
+        ax.grid(True, color='#111', linestyle='--')
         
         self.figure.tight_layout()
         self.canvas.draw()
@@ -221,7 +193,29 @@ class DashboardPage(QWidget):
         
         # 4. Main Objectives Panel (Middle Right)
         self.obj_panel = Panel("MAIN OBJECTIVES")
+        
+        # Add Goal Button to Header
+        add_goal_btn = QPushButton("+")
+        add_goal_btn.setFixedSize(20, 20)
+        add_goal_btn.setStyleSheet("background: transparent; color: #00FF00; border: none; font-weight: bold; font-size: 16px;")
+        add_goal_btn.setCursor(Qt.PointingHandCursor)
+        add_goal_btn.clicked.connect(self.add_goal)
+        
+        # Hacky way to put button in header: add to layout of title label's parent? 
+        # Better: Panel class should support header widgets. 
+        # For now, let's just add it to the panel layout at the top.
+        
+        # Actually, let's modify the Panel class slightly or just add a header layout here.
+        # Since Panel is simple, I'll just add a "Controls" layout at top of obj_panel content.
+        
+        header_layout = QHBoxLayout()
+        header_layout.addStretch()
+        header_layout.addWidget(add_goal_btn)
+        # Insert at top (index 0 is title, 1 is line, 2 is content layout)
+        # But Panel uses VBox. Let's just add it to the obj_layout at top.
+        
         self.obj_layout = QVBoxLayout()
+        self.obj_layout.addLayout(header_layout) # Add button row
         self.obj_panel.layout.addLayout(self.obj_layout)
         self.layout.addWidget(self.obj_panel, 1, 1, 1, 1)
         
@@ -236,31 +230,7 @@ class DashboardPage(QWidget):
         self.timeline_panel.layout.addWidget(self.timeline_scroll)
         self.layout.addWidget(self.timeline_panel, 2, 1, 1, 1)
         
-        # 6. Quick Access Buttons (Bottom Full Width)
-        self.quick_panel = Panel("")
-        quick_layout = QHBoxLayout()
-        self.quick_panel.layout.addLayout(quick_layout)
-        
-        buttons = ["AI UPLINK", "TASKS", "PROJECTS", "STRATEGY", "BROWSER"]
-        for btn_text in buttons:
-            btn = QPushButton(btn_text)
-            btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #111;
-                    color: #00FF00;
-                    border: 1px solid #003300;
-                    padding: 10px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #003300;
-                    color: #00FFFF;
-                }
-            """)
-            # Note: Functional navigation would require callbacks to MainWindow
-            quick_layout.addWidget(btn)
-            
-        self.layout.addWidget(self.quick_panel, 3, 0, 1, 2)
+        # Removed Quick Access Buttons as requested
         
         # Timers
         self.timer = QTimer(self)
@@ -276,6 +246,12 @@ class DashboardPage(QWidget):
         
         # Listen for updates
         Router.instance().data_changed.connect(self.refresh_data)
+
+    def add_goal(self):
+        text, ok = QInputDialog.getText(self, "Add Life Goal", "Enter your long-term objective:")
+        if ok and text:
+            self.data_manager.add_project(text, "Life Goal") # Using add_project as proxy for goals
+            self.refresh_data()
 
     def refresh_data(self):
         today_str = datetime.now().strftime("%Y-%m-%d")

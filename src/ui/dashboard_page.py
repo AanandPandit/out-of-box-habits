@@ -421,6 +421,28 @@ class DashboardPage(QWidget):
         perf_layout.addWidget(self.stat_comp_rate, 1, 1)
         perf_layout.addWidget(self.stat_improv, 1, 2)
         
+        # Filter Dropdown for Header
+        self.filter_combo = QComboBox()
+        self.filter_combo.addItems(["Last 7 Days", "Last 30 Days", "All Time"])
+        self.filter_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #111;
+                color: #FF00FF;
+                border: 1px solid #FF00FF;
+                padding: 2px;
+                font-family: 'Consolas';
+                font-size: 10px;
+                min-width: 100px;
+            }
+            QComboBox::drop-down { border: none; }
+            QComboBox QAbstractItemView {
+                background-color: #111;
+                color: #FF00FF;
+                selection-background-color: #330033;
+            }
+        """)
+        self.filter_combo.currentIndexChanged.connect(self.on_filter_change)
+
         self.charts_panel = Panel("ANALYTICS", "#FF00FF", header_widget=self.filter_combo)
         self.charts = ChartsPanel()
         self.charts_panel.content_layout.addWidget(self.charts)

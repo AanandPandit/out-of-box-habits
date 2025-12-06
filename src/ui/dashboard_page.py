@@ -181,6 +181,7 @@ class ChartsPanel(QWidget):
         self.figure = Figure(facecolor='#050505')
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setStyleSheet("background-color: #050505; border: none;")
+        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(self.canvas)
         
     def plot_data(self, trend_data):
@@ -198,13 +199,21 @@ class ChartsPanel(QWidget):
         y_prod = [d['productivity'] for d in trend_data]
         y_mood = [d['mood'] for d in trend_data]
         y_comp = [d['completed'] for d in trend_data]
-        y_missed = [d['missed'] for d in trend_data]
+        y_proto = [d.get('protocols_completed', 0) for d in trend_data]
         
-        # Plot Lines
+        # Plot Lines with Cyberpunk Style
+        # Productivity (Filled Glow)
         ax.plot(x, y_prod, color='#00FFFF', marker='o', markersize=4, label='Productivity', linewidth=2)
+        ax.fill_between(x, y_prod, color='#00FFFF', alpha=0.1)
+        
+        # Mood (Dashed)
         ax.plot(x, y_mood, color='#FF00FF', marker='x', markersize=4, label='Mood', linewidth=1, linestyle='--')
-        ax.plot(x, y_comp, color='#00FF00', marker='s', markersize=4, label='Completed', linewidth=1.5)
-        ax.plot(x, y_missed, color='#FF0000', marker='v', markersize=4, label='Missed', linewidth=1.5)
+        
+        # Completed (Green Line)
+        ax.plot(x, y_comp, color='#00FF00', marker='s', markersize=4, label='All Tasks', linewidth=1.5)
+        
+        # Protocols (Yellow Bar/Line Overlay)
+        ax.plot(x, y_proto, color='#FFFF00', marker='^', markersize=4, label='Habits', linewidth=1.5, linestyle=':')
         
         ax.set_title('PERFORMANCE METRICS', fontsize=10, color='#00FF00')
         ax.tick_params(labelsize=8, colors='#888')
@@ -367,7 +376,18 @@ class GoalItem(QWidget):
         # Edit Button (Small pencil or similar, using text for now)
         edit_btn = QPushButton("✎")
         edit_btn.setFixedSize(20, 20)
-        edit_btn.setStyleSheet("background: transparent; color: #888; border: none;")
+        edit_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #111;
+                color: #00FFFF;
+                border: 1px solid #003300;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #003300;
+                border: 1px solid #00FFFF;
+            }
+        """)
         edit_btn.setCursor(Qt.PointingHandCursor)
         edit_btn.clicked.connect(self.on_edit)
         layout.addWidget(edit_btn)
@@ -471,7 +491,20 @@ class DashboardPage(QWidget):
         # Add Goal Button to Header
         add_goal_btn = QPushButton("+")
         add_goal_btn.setFixedSize(20, 20)
-        add_goal_btn.setStyleSheet("background: transparent; color: #00FFFF; border: none; font-weight: bold; font-size: 16px;")
+        add_goal_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #111;
+                color: #00FF00;
+                border: 1px solid #00FF00;
+                font-weight: bold;
+                font-size: 16px;
+            }
+            QPushButton:hover {
+                background-color: #003300;
+                color: #00FFFF;
+                border: 1px solid #00FFFF;
+            }
+        """)
         add_goal_btn.setCursor(Qt.PointingHandCursor)
         add_goal_btn.clicked.connect(self.add_goal)
         

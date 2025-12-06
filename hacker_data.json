@@ -32,6 +32,15 @@
             "tasks": [],
             "deadline": "",
             "completed": false
+        },
+        {
+            "id": 1764996471040,
+            "name": "g",
+            "description": "Life Goal",
+            "progress": 0,
+            "tasks": [],
+            "deadline": "2025-12-08",
+            "completed": false
         }
     ],
     "future_plans": []

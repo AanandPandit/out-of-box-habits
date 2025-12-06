@@ -45,13 +45,14 @@ class StatsManager:
         for d in dates:
             day = self.habits_manager.data[d]
             
-            completed = 0
-            missed = 0
+            protocols_completed = 0
             for section in ['protocols', 'main', 'outreach']:
                 tasks = day.get(section, [])
                 for t in tasks:
                     if t.get('done', False):
                         completed += 1
+                        if section == 'protocols':
+                            protocols_completed += 1
                     elif d < today_str:
                         missed += 1
             
@@ -60,7 +61,8 @@ class StatsManager:
                 "productivity": day.get('productivity', 0),
                 "mood": day.get('mood', 0),
                 "completed": completed,
-                "missed": missed
+                "missed": missed,
+                "protocols_completed": protocols_completed
             })
         return trend
 

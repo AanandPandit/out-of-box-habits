@@ -338,7 +338,7 @@ class GoalItem(QWidget):
         color = "#00FFFF" if project.get('completed') else "#00FF00"
         
         self.status_lbl = QLabel(status_text)
-        self.status_lbl.setStyleSheet(f"font-family: 'Consolas'; font-weight: bold; font-size: 16px; color: {color}; margin-right: 5px;")
+        self.status_lbl.setStyleSheet(f"font-family: 'Consolas'; font-weight: bold; font-size: 20px; color: {color}; margin-right: 5px;")
         self.status_lbl.setCursor(Qt.PointingHandCursor)
         # Use mousePressEvent for better responsiveness
         self.status_lbl.mousePressEvent = self.on_toggle
@@ -382,7 +382,7 @@ class GoalItem(QWidget):
                 color: #00FFFF;
                 border: 1px solid #003300;
                 font-weight: bold;
-                font-size: 14px;
+                font-size: 20px;
             }
             QPushButton:hover {
                 background-color: #003300;
@@ -445,6 +445,13 @@ class DashboardPage(QWidget):
         perf_layout.addWidget(self.stat_pending, 1, 0)
         perf_layout.addWidget(self.stat_comp_rate, 1, 1)
         perf_layout.addWidget(self.stat_improv, 1, 2)
+        
+        # Ensure even resizing
+        perf_layout.setColumnStretch(0, 1)
+        perf_layout.setColumnStretch(1, 1)
+        perf_layout.setColumnStretch(2, 1)
+        perf_layout.setRowStretch(0, 1)
+        perf_layout.setRowStretch(1, 1)
         
         left_layout.addWidget(self.perf_panel)
         

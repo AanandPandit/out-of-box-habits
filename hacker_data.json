@@ -2,89 +2,12 @@
     "tasks": [],
     "projects": [
         {
-            "id": 1764992606928,
-            "name": "Get job",
-            "description": "Life Goal",
-            "progress": 0,
-            "tasks": []
-        },
-        {
-            "id": 1764992626454,
-            "name": "Make long Hair",
-            "description": "Life Goal",
-            "progress": 0,
-            "tasks": []
-        },
-        {
-            "id": 1764993125792,
-            "name": "take bath",
-            "description": "Life Goal",
-            "progress": 0,
-            "tasks": [],
-            "deadline": "",
-            "completed": false
-        },
-        {
-            "id": 1764994648185,
-            "name": "hu",
-            "description": "Life Goal",
-            "progress": 0,
-            "tasks": [],
-            "deadline": "",
-            "completed": false
-        },
-        {
-            "id": 1764996471040,
-            "name": "g",
-            "description": "Life Goal",
-            "progress": 0,
-            "tasks": [],
-            "deadline": "2025-12-08",
-            "completed": false
-        },
-        {
-            "id": 1764997230156,
-            "name": "dfg",
-            "description": "Life Goal",
-            "progress": 0,
-            "tasks": [],
-            "deadline": "2026-01-29",
-            "completed": false
-        },
-        {
-            "id": 1764997239752,
+            "id": 1764997548903,
             "name": "sdf",
             "description": "Life Goal",
             "progress": 0,
             "tasks": [],
-            "deadline": "2025-12-25",
-            "completed": false
-        },
-        {
-            "id": 1764997246675,
-            "name": "dfg",
-            "description": "Life Goal",
-            "progress": 0,
-            "tasks": [],
-            "deadline": "2025-12-11",
-            "completed": false
-        },
-        {
-            "id": 1764997259325,
-            "name": "sdf",
-            "description": "Life Goal",
-            "progress": 0,
-            "tasks": [],
-            "deadline": "2026-01-09",
-            "completed": false
-        },
-        {
-            "id": 1764997267057,
-            "name": "sdf",
-            "description": "Life Goal",
-            "progress": 0,
-            "tasks": [],
-            "deadline": "2026-01-07",
+            "deadline": "2025-12-31",
             "completed": false
         }
     ],

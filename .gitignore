@@ -4,4 +4,4 @@ __pycache__/
 .vscode/
 data/
 .gemini/
-.json
+.hacker_data.json

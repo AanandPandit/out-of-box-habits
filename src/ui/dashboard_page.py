@@ -19,35 +19,52 @@ from src.core.cpp_bridge import CppBridge
 
 # --- Custom Widgets ---
 
-class Panel(QFrame):
-    def __init__(self, title, parent=None, header_widget=None):
+class CollapsiblePanel(QWidget):
+    def __init__(self, title, color_hex="#00FF00", parent=None, header_widget=None):
         super().__init__(parent)
-        self.setStyleSheet("""
-            QFrame {
-                background-color: #050505;
-                border: 1px solid #003300;
-                border-radius: 5px;
-            }
-        """)
         self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
         
-        if title:
-            header_layout = QHBoxLayout()
+        # Header Frame (mimics QPushButton style from task_page.py)
+        self.header_frame = QFrame()
+        self.header_frame.setObjectName("HeaderFrame")
+        self.header_frame.setStyleSheet(f"""
+            #HeaderFrame {{
+                background-color: #111;
+                border: 1px solid {color_hex};
+            }}
+        """)
+        self.header_frame.setCursor(Qt.PointingHandCursor)
+        self.header_frame.mouseReleaseEvent = self.toggle_content
+        
+        header_layout = QHBoxLayout(self.header_frame)
+        header_layout.setContentsMargins(5, 5, 5, 5)
+        
+        self.toggle_lbl = QLabel(f"▼ {title}")
+        self.toggle_lbl.setStyleSheet(f"color: {color_hex}; font-weight: bold; font-size: 16px; border: none; background: transparent;")
+        header_layout.addWidget(self.toggle_lbl)
+        
+        header_layout.addStretch()
+        
+        if header_widget:
+            header_layout.addWidget(header_widget)
             
-            self.title_lbl = QLabel(title)
-            self.title_lbl.setStyleSheet("color: #00FF00; font-weight: bold; font-size: 14px; border: none;")
-            header_layout.addWidget(self.title_lbl)
-            
-            if header_widget:
-                header_layout.addStretch()
-                header_layout.addWidget(header_widget)
-            
-            self.layout.addLayout(header_layout)
-            
-            line = QFrame()
-            line.setFrameShape(QFrame.HLine)
-            line.setStyleSheet("color: #003300; border: 1px solid #003300;")
-            self.layout.addWidget(line)
+        self.layout.addWidget(self.header_frame)
+        
+        # Content Area
+        self.content_area = QWidget()
+        self.content_layout = QVBoxLayout(self.content_area)
+        self.content_layout.setContentsMargins(5, 5, 5, 5)
+        self.layout.addWidget(self.content_area)
+        
+    def toggle_content(self, event=None):
+        if self.content_area.isVisible():
+            self.content_area.hide()
+            self.toggle_lbl.setText(self.toggle_lbl.text().replace("▼", "▶"))
+        else:
+            self.content_area.show()
+            self.toggle_lbl.setText(self.toggle_lbl.text().replace("▶", "▼"))
 
 class StatValue(QWidget):
     def __init__(self, label, value, color="#00FFFF"):
@@ -324,9 +341,9 @@ class DashboardPage(QWidget):
         self.layout.setSpacing(10)
         
         # 1. Daily Task Performance Panel (Top Left)
-        self.perf_panel = Panel("DAILY PERFORMANCE")
+        self.perf_panel = CollapsiblePanel("DAILY PERFORMANCE", "#00FF00")
         perf_layout = QGridLayout()
-        self.perf_panel.layout.addLayout(perf_layout)
+        self.perf_panel.content_layout.addLayout(perf_layout)
         
         self.stat_total = StatValue("TOTAL", 0)
         self.stat_done = StatValue("DONE", 0, "#00FF00")
@@ -345,47 +362,47 @@ class DashboardPage(QWidget):
         self.layout.addWidget(self.perf_panel, 0, 0, 1, 1)
         
         # 2. System Status Panel (Top Right)
-        self.sys_panel = Panel("SYSTEM STATUS")
+        self.sys_panel = CollapsiblePanel("SYSTEM STATUS", "#00FFFF")
         self.sys_monitor = SystemMonitor()
-        self.sys_panel.layout.addWidget(self.sys_monitor)
+        self.sys_panel.content_layout.addWidget(self.sys_monitor)
         
         # Add AI Uplink Status
         self.ai_status = QLabel("AI UPLINK: ONLINE")
         self.ai_status.setStyleSheet("color: #00FFFF; font-size: 10px; border: none; margin-top: 5px;")
-        self.sys_panel.layout.addWidget(self.ai_status)
+        self.sys_panel.content_layout.addWidget(self.ai_status)
         
         self.layout.addWidget(self.sys_panel, 0, 1, 1, 1)
         
         # 3. Charts Section (Middle Left - Spanning)
-        self.charts_panel = Panel("ANALYTICS")
+        self.charts_panel = CollapsiblePanel("ANALYTICS", "#FF00FF")
         self.charts = ChartsPanel()
         self.charts.filter_changed.connect(self.update_charts)
-        self.charts_panel.layout.addWidget(self.charts)
+        self.charts_panel.content_layout.addWidget(self.charts)
         self.layout.addWidget(self.charts_panel, 1, 0, 2, 1)
         
         # 4. Long Term Goals Panel (Middle Right)
         # Add Goal Button to Header
         add_goal_btn = QPushButton("+")
         add_goal_btn.setFixedSize(20, 20)
-        add_goal_btn.setStyleSheet("background: transparent; color: #00FF00; border: none; font-weight: bold; font-size: 16px;")
+        add_goal_btn.setStyleSheet("background: transparent; color: #00FFFF; border: none; font-weight: bold; font-size: 16px;")
         add_goal_btn.setCursor(Qt.PointingHandCursor)
         add_goal_btn.clicked.connect(self.add_goal)
         
-        self.obj_panel = Panel("LONG TERM GOALS", header_widget=add_goal_btn)
+        self.obj_panel = CollapsiblePanel("LONG TERM GOALS", "#00FFFF", header_widget=add_goal_btn)
         
         self.obj_layout = QVBoxLayout()
-        self.obj_panel.layout.addLayout(self.obj_layout)
+        self.obj_panel.content_layout.addLayout(self.obj_layout)
         self.layout.addWidget(self.obj_panel, 1, 1, 1, 1)
         
         # 5. Today Timeline (Bottom Right)
-        self.timeline_panel = Panel("TODAY'S TIMELINE")
+        self.timeline_panel = CollapsiblePanel("TODAY'S TIMELINE", "#FFFF00")
         self.timeline_scroll = QScrollArea()
         self.timeline_scroll.setWidgetResizable(True)
         self.timeline_scroll.setStyleSheet("border: none; background: transparent;")
         self.timeline_container = QWidget()
         self.timeline_layout = QVBoxLayout(self.timeline_container)
         self.timeline_scroll.setWidget(self.timeline_container)
-        self.timeline_panel.layout.addWidget(self.timeline_scroll)
+        self.timeline_panel.content_layout.addWidget(self.timeline_scroll)
         self.layout.addWidget(self.timeline_panel, 2, 1, 1, 1)
         
         # Timers

@@ -334,11 +334,11 @@ class GoalItem(QWidget):
         layout.setContentsMargins(0, 2, 0, 2)
         
         # Checkbox style label
-        status_text = "[*]" if project.get('completed') else "[ ]"
+        status_text = "[ * ]" if project.get('completed') else "[   ]"
         color = "#00FFFF" if project.get('completed') else "#00FF00"
         
         self.status_lbl = QLabel(status_text)
-        self.status_lbl.setStyleSheet(f"font-family: 'Consolas'; font-weight: bold; color: {color}; margin-right: 5px;")
+        self.status_lbl.setStyleSheet(f"font-family: 'Consolas'; font-weight: bold; font-size: 16px; color: {color}; margin-right: 5px;")
         self.status_lbl.setCursor(Qt.PointingHandCursor)
         # Use mousePressEvent for better responsiveness
         self.status_lbl.mousePressEvent = self.on_toggle
@@ -480,14 +480,14 @@ class DashboardPage(QWidget):
         # 4. Long Term Goals Panel
         # Add Goal Button to Header
         add_goal_btn = QPushButton("+")
-        add_goal_btn.setFixedSize(30, 30)
+        add_goal_btn.setFixedSize(40, 40)
         add_goal_btn.setStyleSheet("""
             QPushButton {
                 background-color: #111;
                 color: #00FF00;
                 border: 1px solid #00FF00;
                 font-weight: bold;
-                font-size: 18px;
+                font-size: 24px;
             }
             QPushButton:hover {
                 background-color: #003300;
@@ -500,8 +500,18 @@ class DashboardPage(QWidget):
         
         self.obj_panel = CollapsiblePanel("LONG TERM GOALS", "#00FFFF", header_widget=add_goal_btn)
         
-        self.obj_layout = QVBoxLayout()
-        self.obj_panel.content_layout.addLayout(self.obj_layout)
+        # Scroll Area for Goals
+        self.obj_scroll = QScrollArea()
+        self.obj_scroll.setWidgetResizable(True)
+        self.obj_scroll.setStyleSheet("border: none; background: transparent;")
+        
+        self.obj_container = QWidget()
+        self.obj_layout = QVBoxLayout(self.obj_container)
+        self.obj_layout.setContentsMargins(0,0,0,0)
+        
+        self.obj_scroll.setWidget(self.obj_container)
+        self.obj_panel.content_layout.addWidget(self.obj_scroll)
+        
         right_layout.addWidget(self.obj_panel)
         
         right_layout.addStretch() # Push content up
@@ -514,7 +524,8 @@ class DashboardPage(QWidget):
         # --- Bottom Section (Analytics) ---
         # Filter Dropdown for Header
         self.filter_combo = QComboBox()
-        self.filter_combo.addItems(["Last 7 Days", "Last 30 Days", "All Time"])
+        self.filter_combo.addItems(["Last 7 Days", "Last 15 Days", "Last 30 Days", "All Time"])
+        self.filter_combo.setCurrentIndex(1) # Default to 15 days
         self.filter_combo.setStyleSheet("""
             QComboBox {
                 background-color: #111;
@@ -554,7 +565,7 @@ class DashboardPage(QWidget):
         self.net_timer.start(10000)
         QTimer.singleShot(100, self.check_internet) # Initial check
 
-        self.current_days_filter = 7
+        self.current_days_filter = 15
         
         # Initial Load
         self.refresh_data()
@@ -577,8 +588,9 @@ class DashboardPage(QWidget):
 
     def on_filter_change(self, index):
         days = 7
-        if index == 1: days = 30
-        elif index == 2: days = 365
+        if index == 1: days = 15
+        elif index == 2: days = 30
+        elif index == 3: days = 365
         self.current_days_filter = days
         self.refresh_data()
 
@@ -654,8 +666,8 @@ class DashboardPage(QWidget):
         
         # 3. Update Objectives (Goals)
         # Clear old
-        while self.obj_layout.count() > 1: # Keep header at index 0
-            item = self.obj_layout.takeAt(1)
+        while self.obj_layout.count():
+            item = self.obj_layout.takeAt(0)
             if item.widget(): item.widget().deleteLater()
             
         projects = self.data_manager.get_projects()

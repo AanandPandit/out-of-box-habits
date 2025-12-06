@@ -41,6 +41,51 @@
             "tasks": [],
             "deadline": "2025-12-08",
             "completed": false
+        },
+        {
+            "id": 1764997230156,
+            "name": "dfg",
+            "description": "Life Goal",
+            "progress": 0,
+            "tasks": [],
+            "deadline": "2026-01-29",
+            "completed": false
+        },
+        {
+            "id": 1764997239752,
+            "name": "sdf",
+            "description": "Life Goal",
+            "progress": 0,
+            "tasks": [],
+            "deadline": "2025-12-25",
+            "completed": false
+        },
+        {
+            "id": 1764997246675,
+            "name": "dfg",
+            "description": "Life Goal",
+            "progress": 0,
+            "tasks": [],
+            "deadline": "2025-12-11",
+            "completed": false
+        },
+        {
+            "id": 1764997259325,
+            "name": "sdf",
+            "description": "Life Goal",
+            "progress": 0,
+            "tasks": [],
+            "deadline": "2026-01-09",
+            "completed": false
+        },
+        {
+            "id": 1764997267057,
+            "name": "sdf",
+            "description": "Life Goal",
+            "progress": 0,
+            "tasks": [],
+            "deadline": "2026-01-07",
+            "completed": false
         }
     ],
     "future_plans": []

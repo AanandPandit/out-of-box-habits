@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, 
-                             QFrame, QScrollArea, QPushButton, QProgressBar, QSizePolicy, QInputDialog, QComboBox, QDialog, QLineEdit, QCalendarWidget, QDialogButtonBox)
-from PyQt5.QtCore import QTimer, Qt, pyqtSignal
+                             QFrame, QScrollArea, QPushButton, QProgressBar, QSizePolicy, QInputDialog, QComboBox, QDialog, QLineEdit, QCalendarWidget, QDialogButtonBox, QSplitter)
+from PyQt5.QtCore import QTimer, Qt, pyqtSignal, QDate
 from PyQt5.QtGui import QColor, QFont
 from datetime import datetime
 import psutil
@@ -221,7 +221,7 @@ class ChartsPanel(QWidget):
         self.canvas.draw()
 
 class TerminalDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, title="ADD_LONG_TERM_GOAL", default_text="", default_date=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setStyleSheet("""
@@ -253,27 +253,47 @@ class TerminalDialog(QDialog):
                 background-color: #003300;
                 color: #00FFFF;
             }
+            QCalendarWidget QWidget {
+                background-color: #050505;
+                color: #00FF00;
+            }
+            QCalendarWidget QAbstractItemView:enabled {
+                color: #00FF00;
+                background-color: #050505;
+                selection-background-color: #003300;
+                selection-color: #00FFFF;
+            }
         """)
-        self.setFixedSize(400, 250)
+        self.setFixedSize(400, 450)
         
         layout = QVBoxLayout(self)
         
         # Title
-        title = QLabel(">> ADD_LONG_TERM_GOAL")
-        title.setStyleSheet("font-weight: bold; font-size: 16px; margin-bottom: 10px;")
-        layout.addWidget(title)
+        self.title_lbl = QLabel(f">> {title}")
+        self.title_lbl.setStyleSheet("font-weight: bold; font-size: 16px; margin-bottom: 10px;")
+        layout.addWidget(self.title_lbl)
         
         # Goal Input
         layout.addWidget(QLabel("GOAL_OBJECTIVE:"))
-        self.goal_input = QLineEdit()
+        self.goal_input = QLineEdit(default_text)
         self.goal_input.setPlaceholderText("Enter your goal...")
         layout.addWidget(self.goal_input)
         
-        # Date Input
-        layout.addWidget(QLabel("TARGET_DATE (YYYY-MM-DD):"))
-        self.date_input = QLineEdit()
-        self.date_input.setPlaceholderText(datetime.now().strftime("%Y-%m-%d"))
-        layout.addWidget(self.date_input)
+        # Date Input (Calendar)
+        layout.addWidget(QLabel("TARGET_DATE:"))
+        self.calendar = QCalendarWidget()
+        self.calendar.setGridVisible(True)
+        self.calendar.setVerticalHeaderFormat(QCalendarWidget.NoVerticalHeader)
+        if default_date:
+            try:
+                qdate = QDate.fromString(default_date, "yyyy-MM-dd")
+                self.calendar.setSelectedDate(qdate)
+            except:
+                self.calendar.setSelectedDate(QDate.currentDate())
+        else:
+            self.calendar.setSelectedDate(QDate.currentDate())
+            
+        layout.addWidget(self.calendar)
         
         layout.addStretch()
         
@@ -291,10 +311,12 @@ class TerminalDialog(QDialog):
         layout.addLayout(btn_layout)
 
     def get_data(self):
-        return self.goal_input.text(), self.date_input.text()
+        date = self.calendar.selectedDate().toString("yyyy-MM-dd")
+        return self.goal_input.text(), date
 
 class GoalItem(QWidget):
     toggled = pyqtSignal(int) # Emits project ID
+    edit_requested = pyqtSignal(int) # Emits project ID
 
     def __init__(self, project, parent=None):
         super().__init__(parent)
@@ -309,12 +331,15 @@ class GoalItem(QWidget):
         self.status_lbl = QLabel(status_text)
         self.status_lbl.setStyleSheet(f"font-family: 'Consolas'; font-weight: bold; color: {color}; margin-right: 5px;")
         self.status_lbl.setCursor(Qt.PointingHandCursor)
-        self.status_lbl.mouseReleaseEvent = self.on_toggle
+        # Use mousePressEvent for better responsiveness
+        self.status_lbl.mousePressEvent = self.on_toggle
         
         # Goal Text
         self.text_lbl = QLabel(project['name'])
         style = "color: #AAAAAA; text-decoration: line-through;" if project.get('completed') else "color: #00FF00;"
         self.text_lbl.setStyleSheet(f"font-family: 'Consolas'; font-size: 12px; border: none; {style}")
+        self.text_lbl.setCursor(Qt.PointingHandCursor)
+        self.text_lbl.mouseDoubleClickEvent = self.on_edit # Double click to edit
         
         layout.addWidget(self.status_lbl)
         layout.addWidget(self.text_lbl)
@@ -338,9 +363,20 @@ class GoalItem(QWidget):
                 layout.addWidget(time_lbl)
             except:
                 pass
+        
+        # Edit Button (Small pencil or similar, using text for now)
+        edit_btn = QPushButton("✎")
+        edit_btn.setFixedSize(20, 20)
+        edit_btn.setStyleSheet("background: transparent; color: #888; border: none;")
+        edit_btn.setCursor(Qt.PointingHandCursor)
+        edit_btn.clicked.connect(self.on_edit)
+        layout.addWidget(edit_btn)
 
     def on_toggle(self, event):
         self.toggled.emit(self.project['id'])
+        
+    def on_edit(self, event=None):
+        self.edit_requested.emit(self.project['id'])
 
 # --- Main Dashboard Page ---
 
@@ -351,10 +387,22 @@ class DashboardPage(QWidget):
         self.habits_manager = HabitsManager()
         self.stats_manager = StatsManager()
         
-        self.layout = QGridLayout(self)
-        self.layout.setSpacing(10)
+        self.stats_manager = StatsManager()
         
-        # 1. Daily Task Performance Panel (Top Left)
+        # Main Layout with Splitter (Responsive like task_page.py)
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        
+        splitter = QSplitter(Qt.Horizontal)
+        main_layout.addWidget(splitter)
+        
+        # --- Left Column (Performance & Analytics) ---
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(10)
+        
+        # 1. Daily Task Performance Panel
         self.perf_panel = Panel("DAILY PERFORMANCE", "#00FF00")
         perf_layout = QGridLayout()
         self.perf_panel.content_layout.addLayout(perf_layout)
@@ -373,9 +421,19 @@ class DashboardPage(QWidget):
         perf_layout.addWidget(self.stat_comp_rate, 1, 1)
         perf_layout.addWidget(self.stat_improv, 1, 2)
         
-        self.layout.addWidget(self.perf_panel, 0, 0, 1, 1)
+        self.charts_panel = Panel("ANALYTICS", "#FF00FF", header_widget=self.filter_combo)
+        self.charts = ChartsPanel()
+        self.charts_panel.content_layout.addWidget(self.charts)
+        left_layout.addWidget(self.charts_panel)
+        left_layout.addStretch() # Push content up
         
-        # 2. System Status Panel (Top Right)
+        # --- Right Column (System, Goals, Timeline) ---
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(10)
+        
+        # 2. System Status Panel
         self.sys_panel = Panel("SYSTEM STATUS", "#00FFFF")
         self.sys_monitor = SystemMonitor()
         self.sys_panel.content_layout.addWidget(self.sys_monitor)
@@ -385,37 +443,9 @@ class DashboardPage(QWidget):
         self.ai_status.setStyleSheet("color: #FFFF00; font-size: 10px; border: none; margin-top: 5px;")
         self.sys_panel.content_layout.addWidget(self.ai_status)
         
-        self.layout.addWidget(self.sys_panel, 0, 1, 1, 1)
+        right_layout.addWidget(self.sys_panel)
         
-        # 3. Charts Section (Middle Left - Spanning)
-        # Filter Dropdown for Header
-        self.filter_combo = QComboBox()
-        self.filter_combo.addItems(["Last 7 Days", "Last 30 Days", "All Time"])
-        self.filter_combo.setStyleSheet("""
-            QComboBox {
-                background-color: #111;
-                color: #FF00FF;
-                border: 1px solid #FF00FF;
-                padding: 2px;
-                font-family: 'Consolas';
-                font-size: 10px;
-                min-width: 100px;
-            }
-            QComboBox::drop-down { border: none; }
-            QComboBox QAbstractItemView {
-                background-color: #111;
-                color: #FF00FF;
-                selection-background-color: #330033;
-            }
-        """)
-        self.filter_combo.currentIndexChanged.connect(self.on_filter_change)
-
-        self.charts_panel = Panel("ANALYTICS", "#FF00FF", header_widget=self.filter_combo)
-        self.charts = ChartsPanel()
-        self.charts_panel.content_layout.addWidget(self.charts)
-        self.layout.addWidget(self.charts_panel, 1, 0, 2, 1)
-        
-        # 4. Long Term Goals Panel (Middle Right)
+        # 4. Long Term Goals Panel
         # Add Goal Button to Header
         add_goal_btn = QPushButton("+")
         add_goal_btn.setFixedSize(20, 20)
@@ -427,9 +457,9 @@ class DashboardPage(QWidget):
         
         self.obj_layout = QVBoxLayout()
         self.obj_panel.content_layout.addLayout(self.obj_layout)
-        self.layout.addWidget(self.obj_panel, 1, 1, 1, 1)
+        right_layout.addWidget(self.obj_panel)
         
-        # 5. Today Timeline (Bottom Right)
+        # 5. Today Timeline
         self.timeline_panel = CollapsiblePanel("TODAY'S TIMELINE", "#FFFF00")
         self.timeline_scroll = QScrollArea()
         self.timeline_scroll.setWidgetResizable(True)
@@ -438,7 +468,14 @@ class DashboardPage(QWidget):
         self.timeline_layout = QVBoxLayout(self.timeline_container)
         self.timeline_scroll.setWidget(self.timeline_container)
         self.timeline_panel.content_layout.addWidget(self.timeline_scroll)
-        self.layout.addWidget(self.timeline_panel, 2, 1, 1, 1)
+        right_layout.addWidget(self.timeline_panel)
+        
+        right_layout.addStretch() # Push content up
+        
+        # Add to Splitter
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setSizes([400, 600]) # Initial ratio
         
         # Timers
         self.timer = QTimer(self)
@@ -499,6 +536,19 @@ class DashboardPage(QWidget):
                 # Emit global signal instead of just local refresh
                 Router.instance().data_changed.emit()
 
+    def edit_goal(self, project_id):
+        # Find project
+        projects = self.data_manager.get_projects()
+        project = next((p for p in projects if p['id'] == project_id), None)
+        if not project: return
+        
+        dialog = TerminalDialog(self, title="EDIT_GOAL", default_text=project['name'], default_date=project.get('deadline'))
+        if dialog.exec_() == QDialog.Accepted:
+            name, date = dialog.get_data()
+            if name:
+                self.data_manager.edit_project(project_id, name, date)
+                Router.instance().data_changed.emit()
+
     def toggle_goal(self, project_id):
         self.data_manager.toggle_project(project_id)
         # Emit global signal
@@ -553,6 +603,7 @@ class DashboardPage(QWidget):
             for p in projects:
                 item = GoalItem(p)
                 item.toggled.connect(self.toggle_goal)
+                item.edit_requested.connect(self.edit_goal)
                 self.obj_layout.addWidget(item)
                 
         # 4. Update Timeline

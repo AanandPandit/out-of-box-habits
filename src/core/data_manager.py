@@ -79,6 +79,14 @@ class DataManager:
                 break
         self.save_data()
 
+    def edit_project(self, project_id, name, deadline=None):
+        for p in self.data["projects"]:
+            if p["id"] == project_id:
+                p["name"] = name
+                p["deadline"] = deadline
+                break
+        self.save_data()
+
     def get_projects(self):
         return self.data["projects"]
 

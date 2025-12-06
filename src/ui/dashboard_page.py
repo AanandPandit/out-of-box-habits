@@ -20,7 +20,7 @@ from src.core.cpp_bridge import CppBridge
 # --- Custom Widgets ---
 
 class Panel(QFrame):
-    def __init__(self, title, parent=None):
+    def __init__(self, title, parent=None, header_widget=None):
         super().__init__(parent)
         self.setStyleSheet("""
             QFrame {
@@ -32,9 +32,17 @@ class Panel(QFrame):
         self.layout = QVBoxLayout(self)
         
         if title:
+            header_layout = QHBoxLayout()
+            
             self.title_lbl = QLabel(title)
             self.title_lbl.setStyleSheet("color: #00FF00; font-weight: bold; font-size: 14px; border: none;")
-            self.layout.addWidget(self.title_lbl)
+            header_layout.addWidget(self.title_lbl)
+            
+            if header_widget:
+                header_layout.addStretch()
+                header_layout.addWidget(header_widget)
+            
+            self.layout.addLayout(header_layout)
             
             line = QFrame()
             line.setFrameShape(QFrame.HLine)
@@ -356,8 +364,6 @@ class DashboardPage(QWidget):
         self.layout.addWidget(self.charts_panel, 1, 0, 2, 1)
         
         # 4. Long Term Goals Panel (Middle Right)
-        self.obj_panel = Panel("LONG TERM GOALS")
-        
         # Add Goal Button to Header
         add_goal_btn = QPushButton("+")
         add_goal_btn.setFixedSize(20, 20)
@@ -365,12 +371,9 @@ class DashboardPage(QWidget):
         add_goal_btn.setCursor(Qt.PointingHandCursor)
         add_goal_btn.clicked.connect(self.add_goal)
         
-        header_layout = QHBoxLayout()
-        header_layout.addStretch()
-        header_layout.addWidget(add_goal_btn)
+        self.obj_panel = Panel("LONG TERM GOALS", header_widget=add_goal_btn)
         
         self.obj_layout = QVBoxLayout()
-        self.obj_layout.addLayout(header_layout) # Add button row
         self.obj_panel.layout.addLayout(self.obj_layout)
         self.layout.addWidget(self.obj_panel, 1, 1, 1, 1)
         

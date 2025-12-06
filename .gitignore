@@ -5,3 +5,4 @@ __pycache__/
 data/
 .gemini/
 .hacker_data.json
+hacker_data.json

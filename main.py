@@ -12,8 +12,18 @@ def main():
     
     app = QApplication(sys.argv)
     
+    # Splash Screen
+    from src.ui.splash_screen import StartupAnimationWindow
+    splash = StartupAnimationWindow()
+    
+    # Main Window (created but hidden)
     window = MainWindow()
-    window.show()
+    
+    def show_main():
+        window.show()
+    
+    splash.finished.connect(show_main)
+    splash.show()
     
     sys.exit(app.exec_())
 

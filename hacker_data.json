@@ -23,6 +23,15 @@
             "tasks": [],
             "deadline": "",
             "completed": false
+        },
+        {
+            "id": 1764994648185,
+            "name": "hu",
+            "description": "Life Goal",
+            "progress": 0,
+            "tasks": [],
+            "deadline": "",
+            "completed": false
         }
     ],
     "future_plans": []

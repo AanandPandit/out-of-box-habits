@@ -19,6 +19,28 @@ from src.core.cpp_bridge import CppBridge
 
 # --- Custom Widgets ---
 
+class Panel(QFrame):
+    def __init__(self, title, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet("""
+            QFrame {
+                background-color: #050505;
+                border: 1px solid #003300;
+                border-radius: 5px;
+            }
+        """)
+        self.layout = QVBoxLayout(self)
+        
+        if title:
+            self.title_lbl = QLabel(title)
+            self.title_lbl.setStyleSheet("color: #00FF00; font-weight: bold; font-size: 14px; border: none;")
+            self.layout.addWidget(self.title_lbl)
+            
+            line = QFrame()
+            line.setFrameShape(QFrame.HLine)
+            line.setStyleSheet("color: #003300; border: 1px solid #003300;")
+            self.layout.addWidget(line)
+
 class CollapsiblePanel(QWidget):
     def __init__(self, title, color_hex="#00FF00", parent=None, header_widget=None):
         super().__init__(parent)
@@ -292,8 +314,11 @@ class GoalItem(QWidget):
         layout.setContentsMargins(0, 2, 0, 2)
         
         # Checkbox style label
-        self.status_lbl = QLabel("[x]" if project.get('completed') else "[ ]")
-        self.status_lbl.setStyleSheet(f"font-family: 'Consolas'; font-weight: bold; color: {'#00FFFF' if project.get('completed') else '#00FF00'}; margin-right: 5px;")
+        status_text = "[*]" if project.get('completed') else "[ ]"
+        color = "#00FFFF" if project.get('completed') else "#00FF00"
+        
+        self.status_lbl = QLabel(status_text)
+        self.status_lbl.setStyleSheet(f"font-family: 'Consolas'; font-weight: bold; color: {color}; margin-right: 5px;")
         self.status_lbl.setCursor(Qt.PointingHandCursor)
         self.status_lbl.mouseReleaseEvent = self.on_toggle
         
@@ -341,9 +366,9 @@ class DashboardPage(QWidget):
         self.layout.setSpacing(10)
         
         # 1. Daily Task Performance Panel (Top Left)
-        self.perf_panel = CollapsiblePanel("DAILY PERFORMANCE", "#00FF00")
+        self.perf_panel = Panel("DAILY PERFORMANCE")
         perf_layout = QGridLayout()
-        self.perf_panel.content_layout.addLayout(perf_layout)
+        self.perf_panel.layout.addLayout(perf_layout)
         
         self.stat_total = StatValue("TOTAL", 0)
         self.stat_done = StatValue("DONE", 0, "#00FF00")
@@ -362,22 +387,22 @@ class DashboardPage(QWidget):
         self.layout.addWidget(self.perf_panel, 0, 0, 1, 1)
         
         # 2. System Status Panel (Top Right)
-        self.sys_panel = CollapsiblePanel("SYSTEM STATUS", "#00FFFF")
+        self.sys_panel = Panel("SYSTEM STATUS")
         self.sys_monitor = SystemMonitor()
-        self.sys_panel.content_layout.addWidget(self.sys_monitor)
+        self.sys_panel.layout.addWidget(self.sys_monitor)
         
         # Add AI Uplink Status
         self.ai_status = QLabel("AI UPLINK: ONLINE")
         self.ai_status.setStyleSheet("color: #00FFFF; font-size: 10px; border: none; margin-top: 5px;")
-        self.sys_panel.content_layout.addWidget(self.ai_status)
+        self.sys_panel.layout.addWidget(self.ai_status)
         
         self.layout.addWidget(self.sys_panel, 0, 1, 1, 1)
         
         # 3. Charts Section (Middle Left - Spanning)
-        self.charts_panel = CollapsiblePanel("ANALYTICS", "#FF00FF")
+        self.charts_panel = Panel("ANALYTICS")
         self.charts = ChartsPanel()
         self.charts.filter_changed.connect(self.update_charts)
-        self.charts_panel.content_layout.addWidget(self.charts)
+        self.charts_panel.layout.addWidget(self.charts)
         self.layout.addWidget(self.charts_panel, 1, 0, 2, 1)
         
         # 4. Long Term Goals Panel (Middle Right)
@@ -435,11 +460,13 @@ class DashboardPage(QWidget):
                     date = None # Invalid date, ignore
                 
                 self.data_manager.add_project(goal, "Life Goal", deadline=date)
-                self.refresh_data()
+                # Emit global signal instead of just local refresh
+                Router.instance().data_changed.emit()
 
     def toggle_goal(self, project_id):
         self.data_manager.toggle_project(project_id)
-        self.refresh_data()
+        # Emit global signal
+        Router.instance().data_changed.emit()
 
     def update_charts(self, days):
         self.current_days_filter = days

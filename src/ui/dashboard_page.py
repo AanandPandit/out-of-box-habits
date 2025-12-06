@@ -43,7 +43,7 @@ class Panel(QWidget):
         header_layout.setContentsMargins(5, 5, 5, 5)
         
         self.title_lbl = QLabel(title)
-        self.title_lbl.setStyleSheet(f"color: {color_hex}; font-weight: bold; font-size: 16px; border: none; background: transparent;")
+        self.title_lbl.setStyleSheet(f"color: {color_hex}; font-weight: bold; font-size: 18px; border: none; background: transparent;")
         header_layout.addWidget(self.title_lbl)
         
         header_layout.addStretch()
@@ -346,7 +346,7 @@ class GoalItem(QWidget):
         # Goal Text
         self.text_lbl = QLabel(project['name'])
         style = "color: #AAAAAA; text-decoration: line-through;" if project.get('completed') else "color: #00FF00;"
-        self.text_lbl.setStyleSheet(f"font-family: 'Consolas'; font-size: 12px; border: none; {style}")
+        self.text_lbl.setStyleSheet(f"font-family: 'Consolas'; font-size: 14px; border: none; {style}")
         self.text_lbl.setCursor(Qt.PointingHandCursor)
         self.text_lbl.mouseDoubleClickEvent = self.on_edit # Double click to edit
         
@@ -368,20 +368,21 @@ class GoalItem(QWidget):
                     color = "#FFFF00"
                 
                 time_lbl = QLabel(time_str)
-                time_lbl.setStyleSheet(f"color: {color}; font-size: 10px; font-weight: bold;")
+                time_lbl.setStyleSheet(f"color: {color}; font-size: 12px; font-weight: bold;")
                 layout.addWidget(time_lbl)
             except:
                 pass
         
         # Edit Button (Small pencil or similar, using text for now)
         edit_btn = QPushButton("✎")
-        edit_btn.setFixedSize(20, 20)
+        edit_btn.setFixedSize(30, 30)
         edit_btn.setStyleSheet("""
             QPushButton {
                 background-color: #111;
                 color: #00FFFF;
                 border: 1px solid #003300;
                 font-weight: bold;
+                font-size: 14px;
             }
             QPushButton:hover {
                 background-color: #003300;
@@ -409,14 +410,18 @@ class DashboardPage(QWidget):
         
         self.stats_manager = StatsManager()
         
-        # Main Layout with Splitter (Responsive like task_page.py)
-        main_layout = QHBoxLayout(self)
+        self.stats_manager = StatsManager()
+        
+        # Main Layout (Vertical: Top Splitter + Bottom Analytics)
+        main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
         
-        splitter = QSplitter(Qt.Horizontal)
-        main_layout.addWidget(splitter)
+        # --- Top Section (Splitter) ---
+        top_splitter = QSplitter(Qt.Horizontal)
+        main_layout.addWidget(top_splitter, stretch=2)
         
-        # --- Left Column (Performance & Analytics) ---
+        # --- Left Column (Performance & Timeline) ---
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
         left_layout.setContentsMargins(0, 0, 0, 0)
@@ -441,48 +446,33 @@ class DashboardPage(QWidget):
         perf_layout.addWidget(self.stat_comp_rate, 1, 1)
         perf_layout.addWidget(self.stat_improv, 1, 2)
         
-        # Filter Dropdown for Header
-        self.filter_combo = QComboBox()
-        self.filter_combo.addItems(["Last 7 Days", "Last 30 Days", "All Time"])
-        self.filter_combo.setStyleSheet("""
-            QComboBox {
-                background-color: #111;
-                color: #FF00FF;
-                border: 1px solid #FF00FF;
-                padding: 2px;
-                font-family: 'Consolas';
-                font-size: 10px;
-                min-width: 100px;
-            }
-            QComboBox::drop-down { border: none; }
-            QComboBox QAbstractItemView {
-                background-color: #111;
-                color: #FF00FF;
-                selection-background-color: #330033;
-            }
-        """)
-        self.filter_combo.currentIndexChanged.connect(self.on_filter_change)
-
-        self.charts_panel = Panel("ANALYTICS", "#FF00FF", header_widget=self.filter_combo)
-        self.charts = ChartsPanel()
-        self.charts_panel.content_layout.addWidget(self.charts)
-        left_layout.addWidget(self.charts_panel)
-        left_layout.addStretch() # Push content up
+        left_layout.addWidget(self.perf_panel)
         
-        # --- Right Column (System, Goals, Timeline) ---
+        # 2. Today Timeline (Moved to Left)
+        self.timeline_panel = CollapsiblePanel("TODAY'S TIMELINE", "#FFFF00")
+        self.timeline_scroll = QScrollArea()
+        self.timeline_scroll.setWidgetResizable(True)
+        self.timeline_scroll.setStyleSheet("border: none; background: transparent;")
+        self.timeline_container = QWidget()
+        self.timeline_layout = QVBoxLayout(self.timeline_container)
+        self.timeline_scroll.setWidget(self.timeline_container)
+        self.timeline_panel.content_layout.addWidget(self.timeline_scroll)
+        left_layout.addWidget(self.timeline_panel)
+        
+        # --- Right Column (System & Goals) ---
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(10)
         
-        # 2. System Status Panel
+        # 3. System Status Panel
         self.sys_panel = Panel("SYSTEM STATUS", "#00FFFF")
         self.sys_monitor = SystemMonitor()
         self.sys_panel.content_layout.addWidget(self.sys_monitor)
         
         # Add AI Uplink Status
         self.ai_status = QLabel("AI UPLINK: CHECKING...")
-        self.ai_status.setStyleSheet("color: #FFFF00; font-size: 10px; border: none; margin-top: 5px;")
+        self.ai_status.setStyleSheet("color: #FFFF00; font-size: 12px; border: none; margin-top: 5px;")
         self.sys_panel.content_layout.addWidget(self.ai_status)
         
         right_layout.addWidget(self.sys_panel)
@@ -490,14 +480,14 @@ class DashboardPage(QWidget):
         # 4. Long Term Goals Panel
         # Add Goal Button to Header
         add_goal_btn = QPushButton("+")
-        add_goal_btn.setFixedSize(20, 20)
+        add_goal_btn.setFixedSize(30, 30)
         add_goal_btn.setStyleSheet("""
             QPushButton {
                 background-color: #111;
                 color: #00FF00;
                 border: 1px solid #00FF00;
                 font-weight: bold;
-                font-size: 16px;
+                font-size: 18px;
             }
             QPushButton:hover {
                 background-color: #003300;
@@ -514,23 +504,40 @@ class DashboardPage(QWidget):
         self.obj_panel.content_layout.addLayout(self.obj_layout)
         right_layout.addWidget(self.obj_panel)
         
-        # 5. Today Timeline
-        self.timeline_panel = CollapsiblePanel("TODAY'S TIMELINE", "#FFFF00")
-        self.timeline_scroll = QScrollArea()
-        self.timeline_scroll.setWidgetResizable(True)
-        self.timeline_scroll.setStyleSheet("border: none; background: transparent;")
-        self.timeline_container = QWidget()
-        self.timeline_layout = QVBoxLayout(self.timeline_container)
-        self.timeline_scroll.setWidget(self.timeline_container)
-        self.timeline_panel.content_layout.addWidget(self.timeline_scroll)
-        right_layout.addWidget(self.timeline_panel)
-        
         right_layout.addStretch() # Push content up
         
         # Add to Splitter
-        splitter.addWidget(left_widget)
-        splitter.addWidget(right_widget)
-        splitter.setSizes([400, 600]) # Initial ratio
+        top_splitter.addWidget(left_widget)
+        top_splitter.addWidget(right_widget)
+        top_splitter.setSizes([500, 500]) # Initial ratio
+        
+        # --- Bottom Section (Analytics) ---
+        # Filter Dropdown for Header
+        self.filter_combo = QComboBox()
+        self.filter_combo.addItems(["Last 7 Days", "Last 30 Days", "All Time"])
+        self.filter_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #111;
+                color: #FF00FF;
+                border: 1px solid #FF00FF;
+                padding: 2px;
+                font-family: 'Consolas';
+                font-size: 12px;
+                min-width: 120px;
+            }
+            QComboBox::drop-down { border: none; }
+            QComboBox QAbstractItemView {
+                background-color: #111;
+                color: #FF00FF;
+                selection-background-color: #330033;
+            }
+        """)
+        self.filter_combo.currentIndexChanged.connect(self.on_filter_change)
+
+        self.charts_panel = Panel("ANALYTICS", "#FF00FF", header_widget=self.filter_combo)
+        self.charts = ChartsPanel()
+        self.charts_panel.content_layout.addWidget(self.charts)
+        main_layout.addWidget(self.charts_panel, stretch=1)
         
         # Timers
         self.timer = QTimer(self)

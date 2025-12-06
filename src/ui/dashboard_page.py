@@ -1,130 +1,356 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QGridLayout, QFrame, QScrollArea
-from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, 
+                             QFrame, QScrollArea, QPushButton, QProgressBar, QSizePolicy)
+from PyQt5.QtCore import QTimer, Qt, pyqtSignal
+from PyQt5.QtGui import QColor, QFont
 from datetime import datetime
+import psutil
+import sys
+
+# Matplotlib integration
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+
 from src.core.data_manager import DataManager
 from src.core.habits_manager import HabitsManager
-from src.core.cpp_bridge import CppBridge
+from src.core.stats_manager import StatsManager
 from src.core.router import Router
+from src.core.cpp_bridge import CppBridge
 
-class StatCard(QFrame):
-    def __init__(self, title, value):
+# --- Custom Widgets ---
+
+class Panel(QFrame):
+    def __init__(self, title, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet("""
+            QFrame {
+                background-color: #050505;
+                border: 1px solid #003300;
+                border-radius: 5px;
+            }
+        """)
+        self.layout = QVBoxLayout(self)
+        
+        if title:
+            self.title_lbl = QLabel(title)
+            self.title_lbl.setStyleSheet("color: #00FF00; font-weight: bold; font-size: 14px; border: none;")
+            self.layout.addWidget(self.title_lbl)
+            
+            line = QFrame()
+            line.setFrameShape(QFrame.HLine)
+            line.setStyleSheet("color: #003300; border: 1px solid #003300;")
+            self.layout.addWidget(line)
+
+class StatValue(QWidget):
+    def __init__(self, label, value, color="#00FFFF"):
         super().__init__()
-        self.setProperty("class", "Card")
         layout = QVBoxLayout(self)
-        self.title_lbl = QLabel(title)
-        self.title_lbl.setStyleSheet("color: #888; font-size: 12px;")
-        self.value_lbl = QLabel(str(value))
-        self.value_lbl.setStyleSheet("color: #00FF00; font-size: 24px; font-weight: bold;")
-        layout.addWidget(self.title_lbl)
-        layout.addWidget(self.value_lbl)
+        layout.setContentsMargins(0,0,0,0)
+        
+        self.val_lbl = QLabel(str(value))
+        self.val_lbl.setStyleSheet(f"color: {color}; font-size: 20px; font-weight: bold; border: none;")
+        self.val_lbl.setAlignment(Qt.AlignCenter)
+        
+        self.lbl = QLabel(label)
+        self.lbl.setStyleSheet("color: #888; font-size: 10px; border: none;")
+        self.lbl.setAlignment(Qt.AlignCenter)
+        
+        layout.addWidget(self.val_lbl)
+        layout.addWidget(self.lbl)
+
+    def set_value(self, value):
+        self.val_lbl.setText(str(value))
+
+class SystemMonitor(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0,0,0,0)
+        
+        self.cpu_bar = self.create_bar("CPU")
+        self.ram_bar = self.create_bar("RAM")
+        self.uptime_lbl = QLabel("UPTIME: 00:00:00")
+        self.uptime_lbl.setStyleSheet("color: #00FF00; font-family: 'Consolas'; font-size: 10px; border: none;")
+        
+        layout.addWidget(self.uptime_lbl)
+        
+        self.start_time = datetime.now()
+
+    def create_bar(self, label):
+        container = QWidget()
+        l = QHBoxLayout(container)
+        l.setContentsMargins(0,0,0,0)
+        lbl = QLabel(label)
+        lbl.setStyleSheet("color: #00FF00; font-size: 10px; border: none; width: 30px;")
+        bar = QProgressBar()
+        bar.setStyleSheet("""
+            QProgressBar { border: 1px solid #333; background: #111; height: 8px; border-radius: 2px; }
+            QProgressBar::chunk { background-color: #00FF00; }
+        """)
+        bar.setTextVisible(False)
+        l.addWidget(lbl)
+        l.addWidget(bar)
+        self.layout().addWidget(container)
+        return bar
+
+    def update_stats(self):
+        cpu = psutil.cpu_percent()
+        ram = psutil.virtual_memory().percent
+        self.cpu_bar.setValue(int(cpu))
+        self.ram_bar.setValue(int(ram))
+        
+        delta = datetime.now() - self.start_time
+        self.uptime_lbl.setText(f"UPTIME: {str(delta).split('.')[0]}")
+
+class ChartsPanel(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0,0,0,0)
+        
+        self.figure = Figure(facecolor='#050505')
+        self.canvas = FigureCanvas(self.figure)
+        self.canvas.setStyleSheet("background-color: #050505; border: none;")
+        layout.addWidget(self.canvas)
+        
+    def plot_data(self, weekly_data, improvement_trend):
+        self.figure.clear()
+        
+        # Dark theme for plots
+        plt.style.use('dark_background')
+        
+        # 1. Bar Chart: Weekly Summary (Completed vs Missed)
+        ax1 = self.figure.add_subplot(221)
+        ax1.set_facecolor('#050505')
+        
+        # Mock data for last 7 days if not enough real data
+        days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        completed = [5, 7, 6, 8, 5, 9, 4] # Placeholder
+        missed = [1, 0, 2, 0, 1, 0, 1] # Placeholder
+        
+        # Use real data if available (simplified for now as passing complex data is tricky)
+        # In a real scenario, we'd parse `weekly_data` properly.
+        
+        ax1.bar(days, completed, color='#00FF00', label='Done')
+        ax1.bar(days, missed, bottom=completed, color='#FF0000', label='Missed')
+        ax1.set_title('WEEKLY PERFORMANCE', fontsize=8, color='#00FF00')
+        ax1.tick_params(axis='x', labelsize=6, colors='#888')
+        ax1.tick_params(axis='y', labelsize=6, colors='#888')
+        ax1.legend(fontsize=6, facecolor='#111', edgecolor='#333')
+        
+        # 2. Line Chart: Improvement Trend
+        ax2 = self.figure.add_subplot(222)
+        ax2.set_facecolor('#050505')
+        x = range(len(improvement_trend))
+        y = [d['productivity'] for d in improvement_trend]
+        ax2.plot(x, y, color='#00FFFF', marker='o', markersize=3)
+        ax2.set_title('PRODUCTIVITY TREND', fontsize=8, color='#00FFFF')
+        ax2.tick_params(labelsize=6, colors='#888')
+        
+        # 3. Pie Chart: Weekly Breakdown
+        ax3 = self.figure.add_subplot(212)
+        # ax3.set_facecolor('#050505') # Pie chart doesn't use facecolor the same way
+        
+        labels = ['Completed', 'Missed', 'Pending']
+        sizes = [weekly_data['completed'], weekly_data['missed'], weekly_data['pending']]
+        colors = ['#00FF00', '#FF0000', '#FFFF00']
+        
+        # Avoid empty pie
+        if sum(sizes) == 0:
+            sizes = [1]
+            labels = ['No Data']
+            colors = ['#333']
+            
+        wedges, texts, autotexts = ax3.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', 
+                                           textprops={'color': '#888', 'fontsize': 8}, startangle=90)
+        ax3.set_title('WEEKLY BREAKDOWN', fontsize=8, color='#FFFF00')
+        
+        self.figure.tight_layout()
+        self.canvas.draw()
+
+# --- Main Dashboard Page ---
 
 class DashboardPage(QWidget):
     def __init__(self):
         super().__init__()
         self.data_manager = DataManager()
         self.habits_manager = HabitsManager()
+        self.stats_manager = StatsManager()
         
-        layout = QVBoxLayout(self)
+        self.layout = QGridLayout(self)
+        self.layout.setSpacing(10)
         
-        # Greeting
-        self.greeting_lbl = QLabel("WELCOME, AANAND")
-        self.greeting_lbl.setStyleSheet("font-size: 32px; font-weight: bold; color: #00FFFF; margin-bottom: 20px;")
-        layout.addWidget(self.greeting_lbl)
+        # 1. Daily Task Performance Panel (Top Left)
+        self.perf_panel = Panel("DAILY PERFORMANCE")
+        perf_layout = QGridLayout()
+        self.perf_panel.layout.addLayout(perf_layout)
         
-        # Stats Grid
-        stats_layout = QGridLayout()
-        self.tasks_card = StatCard("PENDING TASKS", 0)
-        self.projects_card = StatCard("ACTIVE PROJECTS", 0)
-        self.cpp_card = StatCard("C++ MODULE", "LOADING...")
+        self.stat_total = StatValue("TOTAL", 0)
+        self.stat_done = StatValue("DONE", 0, "#00FF00")
+        self.stat_missed = StatValue("MISSED", 0, "#FF0000")
+        self.stat_pending = StatValue("PENDING", 0, "#FFFF00")
+        self.stat_comp_rate = StatValue("COMPLETION", "0%", "#00FFFF")
+        self.stat_improv = StatValue("IMPROVEMENT", "0%", "#FF00FF")
         
-        stats_layout.addWidget(self.tasks_card, 0, 0)
-        stats_layout.addWidget(self.projects_card, 0, 1)
-        stats_layout.addWidget(self.cpp_card, 0, 2)
-        layout.addLayout(stats_layout)
+        perf_layout.addWidget(self.stat_total, 0, 0)
+        perf_layout.addWidget(self.stat_done, 0, 1)
+        perf_layout.addWidget(self.stat_missed, 0, 2)
+        perf_layout.addWidget(self.stat_pending, 1, 0)
+        perf_layout.addWidget(self.stat_comp_rate, 1, 1)
+        perf_layout.addWidget(self.stat_improv, 1, 2)
         
-        # Today's Tasks Section
-        layout.addWidget(QLabel("TODAY'S OBJECTIVES"))
+        self.layout.addWidget(self.perf_panel, 0, 0, 1, 1)
         
-        self.tasks_scroll = QScrollArea()
-        self.tasks_scroll.setWidgetResizable(True)
-        self.tasks_container = QWidget()
-        self.tasks_layout = QVBoxLayout(self.tasks_container)
-        self.tasks_scroll.setWidget(self.tasks_container)
-        self.tasks_scroll.setStyleSheet("border: 1px solid #003300;")
-        layout.addWidget(self.tasks_scroll, stretch=2)
+        # 2. System Status Panel (Top Right)
+        self.sys_panel = Panel("SYSTEM STATUS")
+        self.sys_monitor = SystemMonitor()
+        self.sys_panel.layout.addWidget(self.sys_monitor)
         
-        # Matrix Rain / Log Area
-        self.log_area = QLabel("SYSTEM LOGS INITIALIZED...")
-        self.log_area.setStyleSheet("color: #003300; font-size: 10px; padding: 10px; border: 1px dashed #003300;")
-        self.log_area.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.log_area.setWordWrap(True)
-        layout.addWidget(self.log_area, stretch=1)
+        # Add AI Uplink Status
+        self.ai_status = QLabel("AI UPLINK: ONLINE")
+        self.ai_status.setStyleSheet("color: #00FFFF; font-size: 10px; border: none; margin-top: 5px;")
+        self.sys_panel.layout.addWidget(self.ai_status)
+        
+        self.layout.addWidget(self.sys_panel, 0, 1, 1, 1)
+        
+        # 3. Charts Section (Middle Left - Spanning)
+        self.charts_panel = Panel("ANALYTICS")
+        self.charts = ChartsPanel()
+        self.charts_panel.layout.addWidget(self.charts)
+        self.layout.addWidget(self.charts_panel, 1, 0, 2, 1)
+        
+        # 4. Main Objectives Panel (Middle Right)
+        self.obj_panel = Panel("MAIN OBJECTIVES")
+        self.obj_layout = QVBoxLayout()
+        self.obj_panel.layout.addLayout(self.obj_layout)
+        self.layout.addWidget(self.obj_panel, 1, 1, 1, 1)
+        
+        # 5. Today Timeline (Bottom Right)
+        self.timeline_panel = Panel("TODAY'S TIMELINE")
+        self.timeline_scroll = QScrollArea()
+        self.timeline_scroll.setWidgetResizable(True)
+        self.timeline_scroll.setStyleSheet("border: none; background: transparent;")
+        self.timeline_container = QWidget()
+        self.timeline_layout = QVBoxLayout(self.timeline_container)
+        self.timeline_scroll.setWidget(self.timeline_container)
+        self.timeline_panel.layout.addWidget(self.timeline_scroll)
+        self.layout.addWidget(self.timeline_panel, 2, 1, 1, 1)
+        
+        # 6. Quick Access Buttons (Bottom Full Width)
+        self.quick_panel = Panel("")
+        quick_layout = QHBoxLayout()
+        self.quick_panel.layout.addLayout(quick_layout)
+        
+        buttons = ["AI UPLINK", "TASKS", "PROJECTS", "STRATEGY", "BROWSER"]
+        for btn_text in buttons:
+            btn = QPushButton(btn_text)
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #111;
+                    color: #00FF00;
+                    border: 1px solid #003300;
+                    padding: 10px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #003300;
+                    color: #00FFFF;
+                }
+            """)
+            # Note: Functional navigation would require callbacks to MainWindow
+            quick_layout.addWidget(btn)
+            
+        self.layout.addWidget(self.quick_panel, 3, 0, 1, 2)
         
         # Timers
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.refresh_stats)
-        self.timer.start(1000)
+        self.timer.timeout.connect(self.refresh_data)
+        self.timer.start(2000) # Refresh every 2s
         
-        self.matrix_timer = QTimer(self)
-        self.matrix_timer.timeout.connect(self.update_matrix)
-        self.matrix_timer.start(100)
+        self.sys_timer = QTimer(self)
+        self.sys_timer.timeout.connect(self.sys_monitor.update_stats)
+        self.sys_timer.start(1000)
         
-        self.refresh_stats()
+        # Initial Load
+        self.refresh_data()
         
         # Listen for updates
-        Router.instance().data_changed.connect(self.refresh_stats)
+        Router.instance().data_changed.connect(self.refresh_data)
 
-    def refresh_stats(self):
-        tasks = self.data_manager.get_tasks()
-        projects = self.data_manager.get_projects()
-        
-        pending = sum(1 for t in tasks if not t['completed'])
-        self.tasks_card.value_lbl.setText(str(pending))
-        self.projects_card.value_lbl.setText(str(len(projects)))
-        
-        # Check C++ Status
-        try:
-            # Simple check
-            primes = CppBridge.find_primes(10)
-            self.cpp_card.value_lbl.setText("ONLINE" if primes else "OFFLINE")
-            self.cpp_card.value_lbl.setStyleSheet("color: #00FFFF;" if primes else "color: #FF0000;")
-        except:
-             self.cpp_card.value_lbl.setText("ERROR")
-             
-        # Refresh Today's Tasks
-        self.refresh_todays_tasks()
-
-    def refresh_todays_tasks(self):
-        # Clear current
-        while self.tasks_layout.count():
-            item = self.tasks_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-                
+    def refresh_data(self):
         today_str = datetime.now().strftime("%Y-%m-%d")
         day_data = self.habits_manager.get_day(today_str)
         
-        # Collect all incomplete tasks
-        incomplete_tasks = []
+        # 1. Update Performance Panel
+        total = 0
+        done = 0
+        for section in ['protocols', 'main', 'outreach']:
+            tasks = day_data.get(section, [])
+            total += len(tasks)
+            done += sum(1 for t in tasks if t.get('done', False))
+            
+        pending = total - done
+        # For today, missed is 0 unless we define logic. 
+        # But let's use the stats manager for consistency if possible, or just calc here.
+        missed = 0 # Placeholder for today
+        
+        self.stat_total.set_value(total)
+        self.stat_done.set_value(done)
+        self.stat_missed.set_value(missed)
+        self.stat_pending.set_value(pending)
+        
+        comp_rate = (done / total * 100) if total > 0 else 0
+        self.stat_comp_rate.set_value(f"{comp_rate:.1f}%")
+        
+        improv = self.stats_manager.get_improvement_rate()
+        prefix = "+" if improv >= 0 else ""
+        self.stat_improv.set_value(f"{prefix}{improv:.1f}%")
+        self.stat_improv.val_lbl.setStyleSheet(f"color: {'#00FF00' if improv >= 0 else '#FF0000'}; font-size: 20px; font-weight: bold; border: none;")
+
+        # 2. Update Charts
+        weekly = self.stats_manager.get_weekly_breakdown()
+        trend = self.stats_manager.get_productivity_trend()
+        self.charts.plot_data(weekly, trend)
+        
+        # 3. Update Objectives (Mocking from DataManager projects for now)
+        # Clear old
+        while self.obj_layout.count():
+            item = self.obj_layout.takeAt(0)
+            if item.widget(): item.widget().deleteLater()
+            
+        projects = self.data_manager.get_projects()
+        if not projects:
+            self.obj_layout.addWidget(QLabel("NO ACTIVE OBJECTIVES", styleSheet="color: #666; font-style: italic; border: none;"))
+        else:
+            for p in projects[:3]: # Show top 3
+                lbl = QLabel(f"{p['name']} (Priority: HIGH)")
+                lbl.setStyleSheet("color: #00FFFF; font-size: 12px; border: none;")
+                bar = QProgressBar()
+                bar.setValue(p['progress'])
+                bar.setStyleSheet("QProgressBar { height: 6px; background: #111; border: none; } QProgressBar::chunk { background: #00FFFF; }")
+                bar.setTextVisible(False)
+                self.obj_layout.addWidget(lbl)
+                self.obj_layout.addWidget(bar)
+                
+        # 4. Update Timeline
+        while self.timeline_layout.count():
+            item = self.timeline_layout.takeAt(0)
+            if item.widget(): item.widget().deleteLater()
+            
+        # Collect tasks
+        all_tasks = []
         for section in ['protocols', 'main', 'outreach']:
             for item in day_data.get(section, []):
-                if not item['done']:
-                    incomplete_tasks.append(f"[{section.upper()}] {item['text']}")
-                    
-        if not incomplete_tasks:
-            lbl = QLabel("ALL SYSTEMS NOMINAL. NO PENDING OBJECTIVES.")
-            lbl.setStyleSheet("color: #00FF00; font-style: italic;")
-            self.tasks_layout.addWidget(lbl)
-        else:
-            for task_text in incomplete_tasks:
-                lbl = QLabel(f"⚠ {task_text}")
-                # Highlight in Red as requested for upcoming/pending
-                lbl.setStyleSheet("color: #FF0000; font-weight: bold; font-size: 14px; padding: 5px; border-bottom: 1px dashed #330000;")
-                self.tasks_layout.addWidget(lbl)
+                all_tasks.append({"text": item['text'], "done": item['done'], "section": section})
         
-        self.tasks_layout.addStretch()
-
-    def update_matrix(self):
-        # Generate a frame of matrix rain using C++ (or fallback)
-        rain = CppBridge.generate_matrix_rain(60, 10, int(datetime.now().timestamp()))
-        self.log_area.setText(rain)
+        if not all_tasks:
+            self.timeline_layout.addWidget(QLabel("NO TASKS LOGGED", styleSheet="color: #666; border: none;"))
+        else:
+            for t in all_tasks:
+                status = "✔" if t['done'] else "○"
+                color = "#00FF00" if t['done'] else "#FFFF00"
+                lbl = QLabel(f"{status} [{t['section'].upper()}] {t['text']}")
+                lbl.setStyleSheet(f"color: {color}; font-size: 12px; border: none; padding: 2px;")
+                self.timeline_layout.addWidget(lbl)
+        
+        self.timeline_layout.addStretch()

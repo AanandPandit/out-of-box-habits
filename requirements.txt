@@ -5,3 +5,5 @@ pandas
 openpyxl
 markdown
 python-dotenv
+matplotlib
+psutil

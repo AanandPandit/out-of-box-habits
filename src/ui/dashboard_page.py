@@ -232,11 +232,12 @@ class DashboardPage(QWidget):
         # 3. Charts Section (Middle Left - Spanning)
         self.charts_panel = Panel("ANALYTICS")
         self.charts = ChartsPanel()
+        self.charts.filter_changed.connect(self.update_charts)
         self.charts_panel.layout.addWidget(self.charts)
         self.layout.addWidget(self.charts_panel, 1, 0, 2, 1)
         
-        # 4. Main Objectives Panel (Middle Right)
-        self.obj_panel = Panel("MAIN OBJECTIVES")
+        # 4. Long Term Goals Panel (Middle Right)
+        self.obj_panel = Panel("LONG TERM GOALS")
         
         # Add Goal Button to Header
         add_goal_btn = QPushButton("+")
@@ -245,18 +246,9 @@ class DashboardPage(QWidget):
         add_goal_btn.setCursor(Qt.PointingHandCursor)
         add_goal_btn.clicked.connect(self.add_goal)
         
-        # Hacky way to put button in header: add to layout of title label's parent? 
-        # Better: Panel class should support header widgets. 
-        # For now, let's just add it to the panel layout at the top.
-        
-        # Actually, let's modify the Panel class slightly or just add a header layout here.
-        # Since Panel is simple, I'll just add a "Controls" layout at top of obj_panel content.
-        
         header_layout = QHBoxLayout()
         header_layout.addStretch()
         header_layout.addWidget(add_goal_btn)
-        # Insert at top (index 0 is title, 1 is line, 2 is content layout)
-        # But Panel uses VBox. Let's just add it to the obj_layout at top.
         
         self.obj_layout = QVBoxLayout()
         self.obj_layout.addLayout(header_layout) # Add button row
@@ -274,8 +266,6 @@ class DashboardPage(QWidget):
         self.timeline_panel.layout.addWidget(self.timeline_scroll)
         self.layout.addWidget(self.timeline_panel, 2, 1, 1, 1)
         
-        # Removed Quick Access Buttons as requested
-        
         # Timers
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh_data)
@@ -284,6 +274,8 @@ class DashboardPage(QWidget):
         self.sys_timer = QTimer(self)
         self.sys_timer.timeout.connect(self.sys_monitor.update_stats)
         self.sys_timer.start(1000)
+        
+        self.current_days_filter = 7
         
         # Initial Load
         self.refresh_data()
@@ -296,6 +288,10 @@ class DashboardPage(QWidget):
         if ok and text:
             self.data_manager.add_project(text, "Life Goal") # Using add_project as proxy for goals
             self.refresh_data()
+
+    def update_charts(self, days):
+        self.current_days_filter = days
+        self.refresh_data()
 
     def refresh_data(self):
         today_str = datetime.now().strftime("%Y-%m-%d")
@@ -310,8 +306,6 @@ class DashboardPage(QWidget):
             done += sum(1 for t in tasks if t.get('done', False))
             
         pending = total - done
-        # For today, missed is 0 unless we define logic. 
-        # But let's use the stats manager for consistency if possible, or just calc here.
         missed = 0 # Placeholder for today
         
         self.stat_total.set_value(total)
@@ -328,29 +322,23 @@ class DashboardPage(QWidget):
         self.stat_improv.val_lbl.setStyleSheet(f"color: {'#00FF00' if improv >= 0 else '#FF0000'}; font-size: 20px; font-weight: bold; border: none;")
 
         # 2. Update Charts
-        weekly = self.stats_manager.get_weekly_breakdown()
-        trend = self.stats_manager.get_productivity_trend()
-        self.charts.plot_data(weekly, trend)
+        trend = self.stats_manager.get_productivity_trend(self.current_days_filter)
+        self.charts.plot_data(trend)
         
         # 3. Update Objectives (Mocking from DataManager projects for now)
         # Clear old
-        while self.obj_layout.count():
-            item = self.obj_layout.takeAt(0)
+        while self.obj_layout.count() > 1: # Keep header at index 0
+            item = self.obj_layout.takeAt(1)
             if item.widget(): item.widget().deleteLater()
             
         projects = self.data_manager.get_projects()
         if not projects:
-            self.obj_layout.addWidget(QLabel("NO ACTIVE OBJECTIVES", styleSheet="color: #666; font-style: italic; border: none;"))
+            self.obj_layout.addWidget(QLabel("NO GOALS SET", styleSheet="color: #666; font-style: italic; border: none;"))
         else:
-            for p in projects[:3]: # Show top 3
-                lbl = QLabel(f"{p['name']} (Priority: HIGH)")
-                lbl.setStyleSheet("color: #00FFFF; font-size: 12px; border: none;")
-                bar = QProgressBar()
-                bar.setValue(p['progress'])
-                bar.setStyleSheet("QProgressBar { height: 6px; background: #111; border: none; } QProgressBar::chunk { background: #00FFFF; }")
-                bar.setTextVisible(False)
+            for p in projects: # Show all
+                lbl = QLabel(f"★ {p['name']}")
+                lbl.setStyleSheet("color: #00FFFF; font-size: 12px; border: none; padding: 2px;")
                 self.obj_layout.addWidget(lbl)
-                self.obj_layout.addWidget(bar)
                 
         # 4. Update Timeline
         while self.timeline_layout.count():
@@ -367,10 +355,17 @@ class DashboardPage(QWidget):
             self.timeline_layout.addWidget(QLabel("NO TASKS LOGGED", styleSheet="color: #666; border: none;"))
         else:
             for t in all_tasks:
-                status = "✔" if t['done'] else "○"
-                color = "#00FF00" if t['done'] else "#FFFF00"
-                lbl = QLabel(f"{status} [{t['section'].upper()}] {t['text']}")
-                lbl.setStyleSheet(f"color: {color}; font-size: 12px; border: none; padding: 2px;")
+                if t['done']:
+                    status = "✔"
+                    color = "#00FF00"
+                    text = f"{status} [{t['section'].upper()}] {t['text']}"
+                else:
+                    status = "⚠"
+                    color = "#FF0000" # Red for pending
+                    text = f"{status} [{t['section'].upper()}] {t['text']}"
+                
+                lbl = QLabel(text)
+                lbl.setStyleSheet(f"color: {color}; font-size: 12px; border: none; padding: 2px; font-weight: {'bold' if not t['done'] else 'normal'};")
                 self.timeline_layout.addWidget(lbl)
         
         self.timeline_layout.addStretch()

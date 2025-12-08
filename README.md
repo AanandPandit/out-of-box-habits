@@ -1,67 +1,72 @@
-# HackerOS - Hybrid PyQt5 + C++ Desktop App
+# 💀 HackerOS - High-Performance Productivity Suite
 
-A cyberpunk-themed productivity OS with an integrated Perplexity AI chatbot.
-Built with Python (PyQt5) for the UI and C++ (PyBind11) for performance-critical modules.
+> *State-of-the-art cyberpunk productivity OS utilizing hybrid Python/C++ architecture.*
 
-## 🚀 Features
-- **Dashboard**: Real-time stats and matrix rain effect (C++ powered).
-- **AI Uplink**: Perplexity API chatbot with sliding panel.
-- **Task Manager**: To-do list with local persistence.
-- **Project Overwatch**: Project tracking with progress bars.
-- **Strategy**: Long-term goal planning.
+![Dashboard Preview](assets/sample_image/dashboard.png)
 
-## 🛠️ Prerequisites
-- Python 3.8+
-- C++ Compiler (MSVC on Windows, GCC/Clang on Linux/Mac)
-- CMake 3.10+
+## 📡 Overview
+HackerOS is a terminal-inspired productivity environment designed for high-efficiency workflows. It combines a robust **Task Management System**, **Habit Tracking Protocols**, and a **Long-Term Goal Strategizer** into a unified, responsive interface. Powered by **PyQt5** for the UI and **C++ (PyBind11)** for performance-critical operations, it features a built-in **AI Neural Link** (Perplexity API) for seamless intelligence augmentation.
 
-## 📦 Installation & Build
+## 📸 Interface Data
+| **The Mainframe (Dashboard)** | **Protocol Enforcer (Habits)** |
+|:---:|:---:|
+| ![Dashboard](assets/sample_image/dashboard.png) | ![Habits](assets/sample_image/habits_manager.png) |
+| *Real-time analytics, system monitoring, and goal tracking.* | *Interactive daily protocols with streak analytics.* |
 
-### 1. Create Virtual Environment
+## 🚀 Key Modules
+- **📊 Analytics Engine**: Real-time trend analysis of productivity, mood, and habit consistency. Defaults to a 15-day sliding window.
+- **🎯 Long Term Strategizer**: Scrollable, persistent goal tracking with visual progress indicators and deadline countdowns.
+- **⚡ Quick Actions**: High-visibility controls for rapid data entry and task management.
+- **🤖 Neural Link**: Integrated AI chatbot powered by the Perplexity API for instant research and assistance.
+- **🛑 C++ Core**: Optimized backend modules for heavy lifting (matrix effects, data processing).
+
+## 🛠️ Installation Protocol
+
+### 1. Initialize Environment
 ```bash
+# Clone the repository
+git clone https://github.com/AanandPandit/out-of-box-habits.git
+cd out-of-box-habits
+
+# Create Virtual Environment
 python -m venv venv
-# Windows
+
+# Activate (Windows)
 .\venv\Scripts\activate
-# Linux/Mac
+# Activate (Linux/Mac)
 source venv/bin/activate
 ```
 
-### 2. Install Python Dependencies
+### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
-pip install pybind11
 ```
 
-### 3. Build C++ Module
-This step compiles the `hacker_utils` C++ module.
+### 3. Configure Security (.env)
+Create a `.env` file in the root directory and add your Perplexity API key:
+```ini
+PERPLEXITY_API_KEY=pplx-xxxxxxxxxxxxxxxxxxxxxx
+```
 
+### 4. Build C++ Core (Optional)
+*The system will auto-fallback to Python if C++ extensions are not built.*
 ```bash
-# Create build directory
-mkdir build
-cd build
-
-# Configure and Build
+mkdir build && cd build
 cmake ..
 cmake --build . --config Release
-
-# Verify the .pyd (Windows) or .so (Linux) file is in src/core/
 ```
-*Note: If the build fails, the app will automatically fallback to Python implementations.*
 
-### 4. Run the App
+## 🎮 Execution
+Launch the mainframe:
 ```bash
-# Return to root
-cd ..
 python main.py
 ```
 
-## 🔑 API Key
-The app uses a placeholder Perplexity API key. To use your own:
-1. Open `python/perplexity_chatbot.py`
-2. Replace `API_KEY` or set `PERPLEXITY_API_KEY` environment variable.
+## 📂 System Architecture
+- `src/ui`: PyQt5 visual components & hacker stylesheets.
+- `src/core`: Python logic, state management, and C++ bridge.
+- `src/cxx`: C++ source files for performance optimization.
+- `assets`: Binary assets, fonts, and imagery.
 
-## 📂 Project Structure
-- `src/ui`: PyQt5 widgets and styles.
-- `src/core`: Data management and C++ bridge.
-- `src/cxx`: C++ source code.
-- `python`: Standalone Python modules (Chatbot).
+---
+*System Status: ONLINE*
